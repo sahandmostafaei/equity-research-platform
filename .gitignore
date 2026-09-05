@@ -7,7 +7,6 @@ env/
 .env
 .ipynb_checkpoints/
 
-*.csv
 *.xlsx
 *.xls
 
@@ -17,6 +16,9 @@ Thumbs.db
 figures/*.png
 figures/*.jpg
 figures/*.jpeg
+
+data/raw/*
+data/processed/*
 
 .idea/
 .vscode/
