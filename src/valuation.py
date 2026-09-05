@@ -11,29 +11,16 @@ def calculate_dcf_value(
 ) -> float:
     """
     Calculate enterprise value using a standard DCF model.
-
-    Parameters
-    ----------
-    free_cash_flows:
-        Forecast free cash flows.
-    wacc:
-        Weighted average cost of capital.
-    terminal_growth:
-        Perpetual terminal growth rate.
-
-    Returns
-    -------
-    float
-        Estimated enterprise value.
     """
+
+    if not free_cash_flows:
+        raise ValueError("At least one forecast FCF is required.")
+
     if wacc <= terminal_growth:
         raise ValueError("WACC must be greater than terminal growth.")
 
     if wacc <= -1:
         raise ValueError("WACC must be greater than -100%.")
-
-    if not free_cash_flows:
-        raise ValueError("At least one forecast FCF is required.")
 
     forecast_pv = sum(
         fcf / ((1 + wacc) ** year)
@@ -51,6 +38,23 @@ def calculate_dcf_value(
     return float(forecast_pv + terminal_pv)
 
 
+def calculate_terminal_value(
+    final_fcf: float,
+    wacc: float,
+    terminal_growth: float,
+) -> float:
+    """
+    Calculate terminal value using the Gordon Growth Model.
+    """
+
+    if wacc <= terminal_growth:
+        raise ValueError("WACC must be greater than terminal growth.")
+
+    return (
+        final_fcf * (1 + terminal_growth)
+    ) / (wacc - terminal_growth)
+
+
 def calculate_equity_value(
     enterprise_value: float,
     total_debt: float,
@@ -59,6 +63,7 @@ def calculate_equity_value(
     """
     Convert enterprise value into equity value.
     """
+
     return enterprise_value - total_debt + cash
 
 
@@ -69,6 +74,7 @@ def calculate_per_share_value(
     """
     Calculate intrinsic value per share.
     """
+
     if shares_outstanding <= 0:
         raise ValueError("Shares outstanding must be positive.")
 
@@ -82,6 +88,7 @@ def calculate_upside(
     """
     Calculate implied upside/downside relative to market price.
     """
+
     if market_price <= 0:
         raise ValueError("Market price must be positive.")
 
@@ -93,8 +100,9 @@ def calculate_pe_value(
     peer_pe: float,
 ) -> float:
     """
-    Estimate equity value per share using P/E.
+    Estimate value per share using a P/E multiple.
     """
+
     return eps * peer_pe
 
 
@@ -107,6 +115,7 @@ def calculate_ev_ebitda_value(
     """
     Estimate equity value per share using EV/EBITDA.
     """
+
     if shares_outstanding <= 0:
         raise ValueError("Shares outstanding must be positive.")
 
@@ -125,6 +134,7 @@ def valuation_sensitivity(
     """
     Produce a DCF enterprise-value sensitivity table.
     """
+
     results = []
 
     for wacc in wacc_values:
@@ -147,3 +157,23 @@ def valuation_sensitivity(
     table.index.name = "WACC"
 
     return table
+
+
+def calculate_margin_of_safety(
+    intrinsic_value: float,
+    market_price: float,
+) -> float:
+    """
+    Calculate margin of safety.
+
+    Margin of safety represents the discount between
+    estimated intrinsic value and the current market price.
+    """
+
+    if intrinsic_value <= 0:
+        raise ValueError("Intrinsic value must be positive.")
+
+    if market_price <= 0:
+        raise ValueError("Market price must be positive.")
+
+    return 1 - (market_price / intrinsic_value)
