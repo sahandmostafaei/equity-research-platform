@@ -1,116 +1,115 @@
-# Results
+# Research Results
 
 ## Status
 
-The core analytical framework has been implemented.
+The analytical framework is implemented and tested.
 
-The project currently contains:
+Final empirical valuation results should be generated only after the
+research pipeline retrieves the selected company's financial statements,
+market data, peer data, and model assumptions.
 
-- Financial statement processing
-- Fundamental financial metrics
-- DCF valuation
-- Terminal value calculation
-- Equity value calculation
-- Per-share valuation
-- P/E valuation
-- EV/EBITDA valuation
-- Comparable-company analysis
-- Peer statistics
-- Scenario modelling
-- Fundamental screening
-- Company ranking
-- Financial quality scoring
-- Research reporting utilities
-- Automated unit tests
+No valuation figures are fabricated in this repository.
 
-## Research Universe
+## Research Target
 
-The initial research universe contains:
+**Target Company:** Microsoft (MSFT)
 
-- Microsoft
-- Alphabet
-- Meta Platforms
-- Apple
-- Amazon
+## Initial Peer Universe
 
-Microsoft is designated as the initial target company.
-
-The remaining companies provide a preliminary peer universe.
+- Alphabet (GOOGL)
+- Meta Platforms (META)
+- Apple (AAPL)
+- Amazon (AMZN)
 
 ## Fundamental Analysis
 
-The final analysis will report:
+The platform evaluates:
 
-| Category | Metric | Result |
-|---|---|---:|
-| Growth | Revenue Growth | Pending |
-| Growth | EBITDA Growth | Pending |
-| Profitability | EBITDA Margin | Pending |
-| Profitability | EBIT Margin | Pending |
-| Profitability | ROE | Pending |
-| Profitability | ROIC | Pending |
-| Cash Flow | Free Cash Flow | Pending |
-| Cash Flow | FCF Margin | Pending |
-| Leverage | Net Debt / EBITDA | Pending |
-| Credit Quality | Interest Coverage | Pending |
+- Revenue growth
+- EBITDA growth
+- EBITDA margin
+- EBIT margin
+- Net margin
+- ROA
+- ROE
+- ROIC
+- Free cash flow
+- FCF margin
+- Net debt
+- Net debt / EBITDA
+- Interest coverage
+- Financial strength
 
-## Valuation
+Final values will be generated from retrieved financial statements.
 
-The final analysis will include:
+## Forecasting
 
-- DCF enterprise value
+The base forecasting framework uses:
+
+- Revenue growth
+- EBITDA margin
+- FCF conversion
+- Five-year forecast horizon
+
+The scenario framework contains:
+
+| Scenario | Revenue Growth | EBITDA Margin | WACC | Terminal Growth |
+|---|---:|---:|---:|---:|
+| Bear | 3.0% | 18.0% | 11.0% | 2.0% |
+| Base | 7.0% | 22.0% | 9.0% | 2.5% |
+| Bull | 12.0% | 26.0% | 8.0% | 3.0% |
+
+These are model assumptions, not observed company results.
+
+## DCF Valuation
+
+The DCF framework produces:
+
+- Present value of forecast free cash flow
 - Terminal value
+- Present value of terminal value
+- Enterprise value
 - Equity value
 - Intrinsic value per share
-- Current market price
-- Implied upside/downside
-- Margin of safety
-- P/E valuation
-- EV/EBITDA valuation
-- Peer-derived valuation range
 
-## Scenario Analysis
+## Relative Valuation
 
-The analysis will compare:
-
-| Scenario | Growth | Margin | WACC | Terminal Growth |
-|---|---:|---:|---:|---:|
-| Bear | 3% | 18% | 11% | 2.0% |
-| Base | 7% | 22% | 9% | 2.5% |
-| Bull | 12% | 26% | 8% | 3.0% |
-
-These assumptions are framework defaults and will be refined using company-specific historical performance and industry characteristics.
-
-## Peer Analysis
-
-The peer analysis will evaluate:
+The platform evaluates:
 
 - P/E
-- EV/Sales
 - EV/EBITDA
+- EV/Sales
 - Price/Sales
-- FCF Yield
+- FCF yield
 
-Peer statistics will include:
+Peer median multiples are used as reference valuation benchmarks.
 
-- Mean
-- Median
-- Minimum
-- Maximum
-- Standard deviation
+## Valuation Comparison
+
+The final research output will compare:
+
+1. DCF valuation
+2. P/E-based valuation
+3. EV/EBITDA valuation
+4. Peer-based valuation
+5. Current market price
+6. Consensus implied value
+7. Upside/downside
+8. Margin of safety
 
 ## Sensitivity Analysis
 
-DCF valuation will be tested across multiple:
+DCF valuation will be evaluated across combinations of:
 
-- WACC assumptions
-- Terminal growth assumptions
+- WACC
+- Terminal growth
 
-The purpose is to identify the valuation range and determine how dependent the investment thesis is on individual assumptions.
+This is intended to identify the valuation range rather than rely on a
+single point estimate.
 
-## Fundamental Screening
+## Investment Screening
 
-The screening framework evaluates:
+The screening framework evaluates companies using:
 
 - ROIC
 - Revenue growth
@@ -118,34 +117,81 @@ The screening framework evaluates:
 - Net debt / EBITDA
 - Interest coverage
 
-The thresholds are configurable.
+Companies can then be ranked using a weighted fundamental score.
+
+## Investment Thesis
+
+The final research output will contain:
+
+### Thesis
+
+The central fundamental investment argument.
+
+### Catalysts
+
+Potential events or developments that could change market expectations.
+
+### Risks
+
+Key operating, financial, valuation, competitive, and market risks.
+
+### Valuation
+
+Comparison of intrinsic value with the current market price.
+
+### Conclusion
+
+A final evidence-based investment assessment.
 
 ## Testing
 
-Automated tests cover:
+The project includes automated tests covering:
 
-- Financial metrics
-- Financial statement calculations
+- Financial analysis
+- Financial statement processing
+- Forecasting
 - DCF valuation
 - Relative valuation
+- Peer analysis
+- Scenario analysis
+- Investment scoring
+- Capital cost calculations
 - Screening
-- Ranking
-- Error handling
 
-## Final Investment Research
+GitHub Actions is configured to execute the test suite automatically.
 
-The final research output will combine:
+## Data Integrity
 
-1. Business fundamentals
-2. Financial statement trends
-3. Profitability
-4. Capital efficiency
-5. Cash generation
-6. Balance-sheet strength
-7. Peer valuation
-8. DCF valuation
-9. Scenario analysis
-10. Sensitivity analysis
-11. Margin of safety
+The project deliberately separates:
 
-No final investment recommendation is recorded until the complete empirical pipeline has been executed.
+- Model assumptions
+- Retrieved financial data
+- Derived financial metrics
+- Valuation outputs
+- Investment conclusions
+
+Observed financial results should not be confused with analyst assumptions.
+
+## Limitations
+
+The platform is intended for educational and research purposes.
+
+Important limitations include:
+
+- Public-data availability
+- Financial statement line-item differences
+- Model assumptions
+- WACC estimation uncertainty
+- Terminal-value sensitivity
+- Peer-selection bias
+- Market-price volatility
+- Forecast uncertainty
+
+## Final Research Standard
+
+The completed research should report actual calculated results,
+supporting tables, sensitivity analysis, valuation comparisons, and an
+evidence-based investment thesis.
+
+No unsupported investment conclusions should be presented as empirical
+findings.
