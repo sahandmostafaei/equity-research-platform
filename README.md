@@ -1,67 +1,58 @@
 # Equity Research & Fundamental Valuation Platform
 
-A Python-based equity research platform for fundamental company analysis, financial statement analysis, valuation, peer comparison, scenario analysis, and investment screening.
+A Python-based equity research platform for fundamental company analysis, financial statement analysis, valuation, peer comparison, scenario analysis, and systematic investment screening.
 
-## Project Objective
+## Objective
 
-This project develops a reproducible framework for analyzing publicly traded companies from a fundamental investment perspective.
+This project develops a reproducible buy-side style framework for analyzing publicly traded companies.
 
 The platform combines:
 
 - Financial statement analysis
-- Profitability and growth analysis
+- Fundamental ratio analysis
+- Growth and profitability analysis
+- ROIC and capital-efficiency analysis
 - Free cash flow analysis
-- Capital efficiency analysis
-- Leverage and liquidity analysis
-- Discounted Cash Flow (DCF) valuation
+- Financial forecasting
+- Discounted Cash Flow valuation
 - Comparable-company valuation
 - Trading multiple analysis
-- Bull/base/bear scenario analysis
-- Valuation sensitivity analysis
-- Investment screening
+- Bull/base/bear scenarios
+- DCF sensitivity analysis
+- Fundamental screening
 - Company ranking
-- Investment thesis generation
+- Investment scoring
+- Investment thesis organization
 
-## Analytical Framework
+## Research Workflow
 
-    Financial Data
-          ↓
-    Financial Statement Analysis
-          ↓
-    Profitability / Growth / Leverage
-          ↓
-    Cash Flow Analysis
-          ↓
-    Business Quality Assessment
-          ↓
-    DCF Valuation
-          ↓
-    Comparable Company Valuation
-          ↓
-    Scenario Analysis
-          ↓
-    Sensitivity Analysis
-          ↓
-    Investment Screening
-          ↓
-    Investment Research Output
+Financial Data
+→ Financial Statements
+→ Fundamental Analysis
+→ Operating Forecast
+→ DCF Valuation
+→ Comparable Valuation
+→ Scenario Analysis
+→ Sensitivity Analysis
+→ Investment Score
+→ Investment Thesis
 
-## Core Research Questions
+## Core Questions
 
-The platform is designed to answer questions such as:
+The framework is designed to answer:
 
 1. Is the company financially healthy?
 2. Is the company generating attractive returns on capital?
-3. Is revenue growth translating into operating profitability?
+3. Is growth translating into profitability?
 4. How efficiently does the company convert earnings into free cash flow?
 5. How much financial leverage does the company use?
 6. How does the company compare with its peers?
-7. What is the estimated intrinsic value of the company?
-8. How sensitive is valuation to key assumptions?
-9. What happens under bull, base, and bear scenarios?
-10. Does the current market price imply an attractive margin of safety?
+7. What is the estimated intrinsic value?
+8. What does the current market price imply?
+9. How sensitive is valuation to key assumptions?
+10. Does the investment case remain attractive under adverse scenarios?
 
-## Key Financial Metrics
+## Fundamental Metrics
 
 ### Growth
 
@@ -73,19 +64,19 @@ The platform is designed to answer questions such as:
 
 ### Profitability
 
-- Gross margin
 - EBITDA margin
 - EBIT margin
 - Net margin
+- ROA
 - ROE
 - ROIC
 
 ### Balance Sheet
 
-- Debt-to-equity
+- Total debt
+- Cash
 - Net debt
 - Net debt / EBITDA
-- Current ratio
 - Interest coverage
 
 ### Cash Flow
@@ -96,25 +87,24 @@ The platform is designed to answer questions such as:
 - FCF margin
 - Cash conversion
 
-## Valuation Methods
+## Valuation
 
 ### Discounted Cash Flow
 
-The DCF framework estimates enterprise value from projected free cash flow and a terminal value.
+The DCF framework separates:
 
-Key assumptions include:
-
-- Revenue growth
-- Operating margin
-- Tax rate
-- Capital expenditure
-- Working capital requirements
-- WACC
-- Terminal growth rate
+- Operating forecasts
+- Free cash flow
+- Explicit forecast period
+- Terminal value
+- Discounting
+- Enterprise value
+- Equity value
+- Per-share intrinsic value
 
 ### Comparable Companies
 
-The platform compares companies using valuation multiples including:
+Relative valuation includes:
 
 - P/E
 - EV/EBITDA
@@ -122,32 +112,59 @@ The platform compares companies using valuation multiples including:
 - Price/Sales
 - FCF yield
 
+Peer statistics include:
+
+- Mean
+- Median
+- Minimum
+- Maximum
+- Standard deviation
+
 ## Scenario Analysis
 
-Three principal scenarios are evaluated:
+The framework evaluates:
 
-### Bear Case
+- Bear case
+- Base case
+- Bull case
 
-Lower growth, weaker margins, and more conservative valuation assumptions.
+Assumptions can vary across:
 
-### Base Case
-
-Central operating and valuation assumptions.
-
-### Bull Case
-
-Higher growth, stronger margins, and favorable operating assumptions.
+- Revenue growth
+- EBITDA margin
+- WACC
+- Terminal growth
+- FCF conversion
 
 ## Sensitivity Analysis
 
-DCF valuation is evaluated across combinations of:
+DCF valuation is tested across combinations of:
 
 - WACC
 - Terminal growth
-- Revenue growth
-- Operating margin
 
-This allows the analysis to distinguish between robust valuations and valuations that depend heavily on optimistic assumptions.
+This provides a valuation range rather than relying on a single point estimate.
+
+## Fundamental Screening
+
+The platform can identify companies meeting configurable criteria such as:
+
+- ROIC ≥ 15%
+- Revenue growth ≥ 10%
+- Net debt / EBITDA ≤ 2.0x
+- FCF margin ≥ 8%
+
+## Investment Scoring
+
+A research-prioritization score incorporates:
+
+- Valuation upside
+- ROIC
+- Revenue growth
+- FCF margin
+- Balance-sheet leverage
+
+The score is intended to prioritize further research rather than serve as a standalone trading signal.
 
 ## Technology
 
@@ -162,73 +179,76 @@ This allows the analysis to distinguish between robust valuations and valuations
 
 ## Project Structure
 
-    equity-research-platform/
-    │
-    ├── data/
-    ├── figures/
-    ├── notebooks/
-    ├── src/
-    │   ├── data_loader.py
-    │   ├── financial_analysis.py
-    │   ├── valuation.py
-    │   ├── comparables.py
-    │   ├── scenarios.py
-    │   ├── screening.py
-    │   └── pipeline.py
-    │
-    ├── tests/
-    │   ├── test_financial_analysis.py
-    │   ├── test_valuation.py
-    │   └── test_screening.py
-    │
-    ├── README.md
-    ├── PROJECT.md
-    ├── RESULTS.md
-    ├── requirements.txt
-    ├── pytest.ini
-    ├── .gitignore
-    └── LICENSE
+equity-research-platform/
+│
+├── data/
+│   └── research_universe.csv
+│
+├── figures/
+│
+├── notebooks/
+│
+├── src/
+│   ├── __init__.py
+│   ├── comparables.py
+│   ├── data_loader.py
+│   ├── data_processing.py
+│   ├── financial_analysis.py
+│   ├── financial_statements.py
+│   ├── forecasting.py
+│   ├── investment_thesis.py
+│   ├── market_data.py
+│   ├── pipeline.py
+│   ├── reporting.py
+│   ├── scenarios.py
+│   ├── screening.py
+│   └── valuation.py
+│
+├── tests/
+│   ├── test_comparables.py
+│   ├── test_financial_analysis.py
+│   ├── test_financial_statements.py
+│   ├── test_forecasting.py
+│   ├── test_investment_thesis.py
+│   ├── test_screening.py
+│   └── test_valuation.py
+│
+├── .gitignore
+├── LICENSE
+├── PROJECT.md
+├── README.md
+├── RESULTS.md
+├── pytest.ini
+└── requirements.txt
 
 ## Reproducibility
 
-The project is designed around a modular Python workflow.
+The system is modular so that:
 
-The analysis separates:
-
-1. Data acquisition
-2. Data processing
-3. Financial analysis
-4. Valuation
-5. Scenario analysis
-6. Screening
-7. Output generation
-
-This structure allows individual components to be tested independently.
+1. Data can be acquired independently.
+2. Financial statements can be processed independently.
+3. Fundamental metrics can be calculated independently.
+4. Forecasts can be tested independently.
+5. Valuation models can be tested independently.
+6. Screening and ranking can be tested independently.
+7. Reporting can be reproduced from the same inputs.
 
 ## Limitations
 
-The analysis is intended for research and educational purposes.
+The analysis depends on the quality of financial data and the assumptions used in forecasting and valuation.
 
-DCF valuations depend heavily on assumptions regarding growth, margins, discount rates, terminal growth, and capital requirements.
+DCF estimates are particularly sensitive to:
 
-Market prices and financial data may also change over time.
+- Revenue growth
+- Operating margins
+- Free cash flow conversion
+- WACC
+- Terminal growth
+- Capital requirements
 
-The resulting valuation should therefore be interpreted as an analytical estimate rather than a definitive estimate of intrinsic value.
+Peer valuation is also sensitive to the choice of comparable companies.
 
-## Future Development
-
-Potential extensions include:
-
-- Multi-company automated screening
-- Sector-specific valuation models
-- Factor-based ranking
-- Earnings surprise analysis
-- Insider transaction analysis
-- Event-driven research
-- Historical valuation backtesting
-- Automated research reports
-- Portfolio integration
-- Alternative-data integration
+The framework is therefore intended for research and analytical purposes rather than as a definitive investment recommendation.
 
 ## Portfolio Context
 
@@ -254,4 +274,5 @@ Focus areas:
 - Quantitative Finance
 - Investment Analysis
 - Financial Modelling
-- Risk Analytics
+- Financial Risk
+- Data Analytics
