@@ -2,37 +2,35 @@
 
 ## Equity Research & Fundamental Valuation Platform
 
-### 1. Research Objective
+## 1. Objective
 
-The objective of this project is to develop a reproducible quantitative framework for fundamental equity research.
+The objective is to develop a reproducible equity research framework combining financial statement analysis, fundamental screening, financial forecasting, valuation, peer analysis, scenario analysis, and investment-thesis construction.
 
-The system evaluates companies from four primary perspectives:
-
-1. Financial quality
-2. Operating performance
-3. Valuation
-4. Investment attractiveness
+The framework is designed around a practical buy-side research workflow.
 
 ---
 
-## 2. Research Framework
+## 2. Research Workflow
 
-The project follows a buy-side equity research workflow:
+The analytical process is:
 
-Financial statements
-→ fundamental metrics
-→ business quality
-→ valuation
-→ peer comparison
-→ scenarios
-→ sensitivity analysis
-→ investment conclusion
+Financial Data
+→ Financial Statements
+→ Fundamental Metrics
+→ Historical Performance
+→ Operating Forecast
+→ DCF Valuation
+→ Comparable Valuation
+→ Scenario Analysis
+→ Sensitivity Analysis
+→ Investment Score
+→ Investment Thesis
 
 ---
 
-## 3. Fundamental Analysis
+## 3. Financial Analysis
 
-The analysis evaluates:
+The framework evaluates:
 
 ### Growth
 
@@ -40,11 +38,10 @@ The analysis evaluates:
 - EBITDA growth
 - EBIT growth
 - EPS growth
-- FCF growth
+- Free cash flow growth
 
 ### Profitability
 
-- Gross margin
 - EBITDA margin
 - EBIT margin
 - Net margin
@@ -52,7 +49,14 @@ The analysis evaluates:
 - ROE
 - ROIC
 
-### Balance Sheet
+### Capital Efficiency
+
+- Invested capital
+- ROIC
+- Cash conversion
+- FCF margin
+
+### Financial Strength
 
 - Total debt
 - Cash
@@ -61,37 +65,45 @@ The analysis evaluates:
 - Interest coverage
 - Liquidity
 
-### Cash Flow
+---
 
-- Operating cash flow
-- Capital expenditure
+## 4. Forecasting
+
+The operating forecast projects:
+
+- Revenue
+- EBITDA
 - Free cash flow
-- FCF margin
-- Cash conversion
+
+The forecast is driven by explicit assumptions rather than opaque model outputs.
+
+Key assumptions include:
+
+- Revenue growth
+- EBITDA margin
+- FCF conversion
+- Forecast horizon
 
 ---
 
-## 4. Valuation
+## 5. DCF Valuation
 
-The project uses multiple valuation approaches.
+The DCF framework consists of:
 
-### DCF
+1. Operating forecast
+2. Free cash flow forecast
+3. Explicit-period discounting
+4. Terminal value
+5. Enterprise value
+6. Net debt adjustment
+7. Equity value
+8. Per-share value
 
-Enterprise value is estimated from projected free cash flow and terminal value.
+---
 
-The framework explicitly separates:
+## 6. Relative Valuation
 
-- Forecast period
-- Terminal period
-- Discounting
-- Enterprise value
-- Net debt adjustment
-- Equity value
-- Per-share value
-
-### Relative Valuation
-
-Peer multiples include:
+The framework evaluates:
 
 - P/E
 - EV/EBITDA
@@ -99,115 +111,143 @@ Peer multiples include:
 - Price/Sales
 - FCF yield
 
+Peer analysis uses descriptive statistics including:
+
+- Mean
+- Median
+- Minimum
+- Maximum
+- Standard deviation
+
 ---
 
-## 5. Scenario Analysis
+## 7. Scenario Analysis
 
-Three scenarios are used:
+The framework uses three scenarios:
 
-- Bear
-- Base
-- Bull
+### Bear
 
-Each scenario can vary:
+Conservative growth and profitability assumptions with a higher discount rate.
 
-- Revenue growth
-- EBITDA margin
+### Base
+
+Central operating and valuation assumptions.
+
+### Bull
+
+Higher growth and profitability assumptions with a lower discount rate.
+
+---
+
+## 8. Sensitivity Analysis
+
+DCF valuation is evaluated across:
+
 - WACC
 - Terminal growth
 
-The objective is to determine whether an investment thesis remains attractive under different operating assumptions.
+The purpose is to identify the valuation range and assess the robustness of the investment thesis.
 
 ---
 
-## 6. Sensitivity Analysis
+## 9. Fundamental Screening
 
-The DCF framework evaluates valuation across multiple WACC and terminal-growth combinations.
-
-This identifies:
-
-- Base valuation
-- Upside case
-- Downside case
-- Valuation sensitivity
-- Margin of safety
-
----
-
-## 7. Screening Framework
-
-A fundamental screening model identifies companies meeting minimum quality requirements.
-
-Example criteria:
-
-- ROIC ≥ 15%
-- Revenue growth ≥ 10%
-- Net debt / EBITDA ≤ 2.0x
-- FCF margin ≥ 8%
-
-The thresholds are configurable.
-
----
-
-## 8. Company Ranking
-
-Companies can also be ranked using a weighted fundamental score.
-
-The ranking can incorporate:
+Companies can be screened according to:
 
 - ROIC
 - Revenue growth
 - FCF margin
-- EBITDA margin
+- Net debt / EBITDA
 - Interest coverage
 
-This creates a systematic method for prioritizing investment research.
+Thresholds are configurable.
 
 ---
 
-## 9. Reproducibility
+## 10. Investment Scoring
 
-The project separates:
+The platform produces a research-prioritization score using:
+
+- Valuation attractiveness
+- ROIC
+- Revenue growth
+- FCF margin
+- Balance-sheet leverage
+
+The score is not intended to function as a standalone trading signal.
+
+---
+
+## 11. Investment Thesis
+
+The final research output is designed to organize:
+
+### Thesis
+
+Why the company may be attractive.
+
+### Catalysts
+
+Events or developments that could change market expectations.
+
+### Risks
+
+Factors that could impair the investment thesis.
+
+### Valuation
+
+Comparison between intrinsic value and market price.
+
+### Conclusion
+
+Overall assessment based on fundamental evidence.
+
+---
+
+## 12. Reproducibility
+
+The system separates:
 
 - Data acquisition
+- Data processing
 - Financial analysis
+- Forecasting
 - Valuation
-- Scenario modelling
+- Comparable analysis
 - Screening
-- Testing
+- Investment scoring
+- Reporting
 
-This modular architecture allows individual components to be validated independently.
+Automated tests validate core calculations.
 
 ---
 
-## 10. Limitations
+## 13. Limitations
 
-Fundamental valuation is inherently sensitive to assumptions.
+The framework depends on:
 
-The largest sources of uncertainty include:
-
-- Revenue growth
-- Operating margins
-- Capital expenditure
-- Working capital
-- WACC
-- Terminal growth
+- Data quality
+- Accounting classifications
+- Forecast assumptions
 - Peer selection
+- Discount rates
+- Terminal growth assumptions
 - Market conditions
 
-Therefore, valuation should be interpreted as a range rather than a precise point estimate.
+Valuation should therefore be interpreted as a range rather than a precise estimate.
 
 ---
 
-## 11. Intended Application
+## 14. Intended Application
 
-The framework is designed to demonstrate practical capabilities relevant to:
+The project is intended to demonstrate skills relevant to:
 
-- Equity research
-- Hedge fund research
 - Private equity
+- Hedge funds
+- Equity research
 - Investment banking
 - Asset management
-- Quantitative finance
+- Fundamental investing
+- Financial modelling
 
-The emphasis is on combining financial reasoning with reproducible quantitative analysis.
+The primary emphasis is fundamental investment analysis combined with reproducible quantitative methods.
