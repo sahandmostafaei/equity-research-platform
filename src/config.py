@@ -13,9 +13,6 @@ DEFAULT_CONFIG_PATH = Path(
 def load_research_config(
     path: str | Path = DEFAULT_CONFIG_PATH,
 ) -> pd.DataFrame:
-    """
-    Load the centralized research configuration.
-    """
     path = Path(path)
 
     if not path.exists():
@@ -33,13 +30,20 @@ def load_research_config(
         "description",
     }
 
-    missing = required_columns - set(
-        config.columns
+    missing = (
+        required_columns
+        - set(config.columns)
     )
 
     if missing:
         raise ValueError(
-            f"Missing configuration columns: {sorted(missing)}"
+            f"Missing configuration columns: "
+            f"{sorted(missing)}"
+        )
+
+    if config["parameter"].duplicated().any():
+        raise ValueError(
+            "Configuration parameters must be unique."
         )
 
     return config
@@ -49,9 +53,6 @@ def get_config_value(
     config: pd.DataFrame,
     parameter: str,
 ) -> str:
-    """
-    Retrieve a configuration value by parameter name.
-    """
     matches = config.loc[
         config["parameter"] == parameter,
         "value",
@@ -69,9 +70,6 @@ def get_float_config(
     config: pd.DataFrame,
     parameter: str,
 ) -> float:
-    """
-    Retrieve a configuration parameter as float.
-    """
     value = get_config_value(
         config,
         parameter,
@@ -81,7 +79,8 @@ def get_float_config(
         return float(value)
     except ValueError as exc:
         raise ValueError(
-            f"Configuration value is not numeric: {parameter}"
+            f"Configuration value is not numeric: "
+            f"{parameter}"
         ) from exc
 
 
@@ -89,9 +88,6 @@ def get_int_config(
     config: pd.DataFrame,
     parameter: str,
 ) -> int:
-    """
-    Retrieve a configuration parameter as integer.
-    """
     value = get_config_value(
         config,
         parameter,
@@ -101,5 +97,6 @@ def get_int_config(
         return int(float(value))
     except ValueError as exc:
         raise ValueError(
-            f"Configuration value is not an integer: {parameter}"
+            f"Configuration value is not an integer: "
+            f"{parameter}"
         ) from exc
