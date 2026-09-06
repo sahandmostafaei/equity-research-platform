@@ -1,38 +1,42 @@
 # Research Results
+## Equity Research & Fundamental Valuation Platform
 
-## Status
+## 1. Status
 
-The core analytical and valuation framework has been implemented and tested.
+**Analytical framework:** Implemented
 
-Final empirical results should be generated only after the research pipeline retrieves the selected company's financial statements, market data, peer information, and model inputs.
+**Software architecture:** Implemented
 
-No valuation figures or investment conclusions are fabricated in this repository.
+**Unit-test framework:** Implemented
 
----
+**Integrated research engine:** Implemented
 
-## Research Target
+**Centralized configuration:** Implemented
 
-**Target Company:** Microsoft (MSFT)
+**Empirical market-data results:** Pending actual execution
 
-### Peer Universe
+No unexecuted model output is presented as an empirical finding.
+
+## 2. Research Target
+
+**Target:** Microsoft (MSFT)
+
+## 3. Peer Universe
 
 - Alphabet (GOOGL)
 - Meta Platforms (META)
 - Apple (AAPL)
 - Amazon (AMZN)
 
----
+## 4. Fundamental Analysis
 
-## 1. Fundamental Analysis
-
-The platform evaluates the target company across:
+The platform supports analysis of:
 
 ### Growth
 
 - Revenue growth
 - EBITDA growth
-- EBIT growth
-- Net income growth
+- Earnings growth
 - Free cash flow growth
 
 ### Profitability
@@ -58,109 +62,73 @@ The platform evaluates the target company across:
 - Capital expenditure
 - Free cash flow
 - FCF margin
+- FCF yield
 
-### Current Result
+## 5. Financial Statement Analysis
 
-Final historical values are pending empirical execution of the complete research workflow.
+The platform standardizes:
 
----
+- Income statement information
+- Balance-sheet information
+- Cash-flow information
 
-## 2. Market Valuation
+The standardized analytical dataset includes:
 
-The platform calculates:
+- Revenue
+- EBIT
+- EBITDA
+- Net income
+- Operating cash flow
+- Capital expenditure
+- Free cash flow
+- Debt
+- Cash
+- Equity
+- NOPAT
+- Invested capital
+
+## 6. Market Valuation
+
+Supported market metrics include:
 
 - Market capitalization
 - Enterprise value
-- Current share price
-- Shares outstanding
 - EPS
 - P/E
 - EV/Sales
 - EV/EBITDA
 - FCF yield
 
-### Current Result
+Actual values remain pending final data retrieval and execution.
 
-Final market valuation figures are pending data retrieval and pipeline execution.
+## 7. Forecasting
 
----
+The platform produces a configurable five-year operating forecast.
 
-## 3. Historical Financial Analysis
-
-The final research output should include a historical table containing:
-
-| Metric | Historical Year 1 | Historical Year 2 | Historical Year 3 | Historical Year 4 |
-|---|---:|---:|---:|---:|
-| Revenue | Pending | Pending | Pending | Pending |
-| EBITDA | Pending | Pending | Pending | Pending |
-| EBIT | Pending | Pending | Pending | Pending |
-| Net Income | Pending | Pending | Pending | Pending |
-| Free Cash Flow | Pending | Pending | Pending | Pending |
-| EBITDA Margin | Pending | Pending | Pending | Pending |
-| EBIT Margin | Pending | Pending | Pending | Pending |
-| Net Margin | Pending | Pending | Pending | Pending |
-| ROIC | Pending | Pending | Pending | Pending |
-| ROA | Pending | Pending | Pending | Pending |
-| ROE | Pending | Pending | Pending | Pending |
-| Net Debt / EBITDA | Pending | Pending | Pending | Pending |
-
-No numerical values should be inserted until they are generated from the underlying financial data.
-
----
-
-## 4. Forecasting
-
-The operating forecast uses a five-year horizon.
-
-The framework forecasts:
+Forecast variables:
 
 - Revenue
 - EBITDA
 - Free cash flow
 
-### Forecast Assumptions
+## 8. Cost of Capital
 
-The initial scenario framework is:
-
-| Scenario | Revenue Growth | EBITDA Margin | FCF Conversion |
-|---|---:|---:|---:|
-| Bear | 3.0% | 18.0% | 50.0% |
-| Base | 7.0% | 22.0% | 50.0% |
-| Bull | 12.0% | 26.0% | 50.0% |
-
-These are modelling assumptions and should not be confused with observed historical values.
-
----
-
-## 5. Cost of Capital
-
-The valuation framework supports explicit estimation of:
+The framework supports:
 
 - Risk-free rate
 - Beta
 - Equity risk premium
 - Cost of equity
-- Pre-tax cost of debt
-- Tax rate
+- Cost of debt
 - After-tax cost of debt
 - Capital structure
 - WACC
 
-### Current Scenario WACC Assumptions
+Actual company-specific WACC results remain pending empirical execution.
 
-| Scenario | WACC |
-|---|---:|
-| Bear | 11.0% |
-| Base | 9.0% |
-| Bull | 8.0% |
+## 9. DCF Valuation
 
-Final empirical WACC should be documented together with the assumptions used to derive it.
-
----
-
-## 6. DCF Valuation
-
-The DCF model produces:
+The DCF framework calculates:
 
 - Present value of forecast FCF
 - Terminal value
@@ -169,69 +137,47 @@ The DCF model produces:
 - Equity value
 - Intrinsic value per share
 
-### Current Result
+The implementation validates:
 
-Pending complete pipeline execution.
+**WACC > terminal growth**
 
-### Final Output
-
-The completed research should report:
-
-| DCF Output | Result |
-|---|---:|
-| Forecast PV | Pending |
-| Terminal Value | Pending |
-| Terminal Value PV | Pending |
-| Enterprise Value | Pending |
-| Total Debt | Pending |
-| Cash | Pending |
-| Equity Value | Pending |
-| Shares Outstanding | Pending |
-| Intrinsic Value / Share | Pending |
-| Current Market Price | Pending |
-| Upside / Downside | Pending |
-| Margin of Safety | Pending |
-
----
-
-## 7. DCF Scenario Analysis
-
-The initial scenario framework is:
+## 10. Scenario Analysis
 
 ### Bear Case
 
-- Revenue growth: 3.0%
-- EBITDA margin: 18.0%
-- WACC: 11.0%
-- Terminal growth: 2.0%
+| Assumption | Value |
+|---|---:|
+| Revenue Growth | 3.0% |
+| EBITDA Margin | 18.0% |
+| FCF Conversion | 50.0% |
+| WACC | 11.0% |
+| Terminal Growth | 2.0% |
 
 ### Base Case
 
-- Revenue growth: 7.0%
-- EBITDA margin: 22.0%
-- WACC: 9.0%
-- Terminal growth: 2.5%
+| Assumption | Value |
+|---|---:|
+| Revenue Growth | 7.0% |
+| EBITDA Margin | 22.0% |
+| FCF Conversion | 50.0% |
+| WACC | 9.0% |
+| Terminal Growth | 2.5% |
 
 ### Bull Case
 
-- Revenue growth: 12.0%
-- EBITDA margin: 26.0%
-- WACC: 8.0%
-- Terminal growth: 3.0%
+| Assumption | Value |
+|---|---:|
+| Revenue Growth | 12.0% |
+| EBITDA Margin | 26.0% |
+| FCF Conversion | 50.0% |
+| WACC | 8.0% |
+| Terminal Growth | 3.0% |
 
-### Scenario Results
+These assumptions are modelling inputs rather than empirical findings.
 
-| Scenario | Enterprise Value | Equity Value | Intrinsic Value / Share |
-|---|---:|---:|---:|
-| Bear | Pending | Pending | Pending |
-| Base | Pending | Pending | Pending |
-| Bull | Pending | Pending | Pending |
+## 11. Relative Valuation
 
----
-
-## 8. Relative Valuation
-
-The peer framework evaluates:
+The platform supports:
 
 - P/E
 - EV/EBITDA
@@ -239,98 +185,25 @@ The peer framework evaluates:
 - Price/Sales
 - FCF yield
 
-### Peer Statistics
+Peer statistics include:
 
-| Multiple | Mean | Median | Minimum | Maximum | Standard Deviation |
-|---|---:|---:|---:|---:|---:|
-| P/E | Pending | Pending | Pending | Pending | Pending |
-| EV/EBITDA | Pending | Pending | Pending | Pending | Pending |
-| EV/Sales | Pending | Pending | Pending | Pending | Pending |
-| Price/Sales | Pending | Pending | Pending | Pending | Pending |
-| FCF Yield | Pending | Pending | Pending | Pending | Pending |
+- Mean
+- Median
+- Minimum
+- Maximum
+- Standard deviation
 
----
-
-## 9. Target vs Peers
-
-The final analysis should compare the target with peers across:
-
-- Revenue growth
-- EBITDA margin
-- FCF margin
-- ROIC
-- Net debt / EBITDA
-- P/E
-- EV/EBITDA
-- EV/Sales
-- FCF yield
-
-### Current Result
-
-Pending empirical execution.
-
----
-
-## 10. Peer-Implied Valuation
-
-The peer framework will apply peer median multiples to target financial metrics.
-
-Expected outputs include:
-
-- P/E implied value
-- EV/EBITDA implied value
-- EV/Sales implied value
-- Peer valuation range
-- Median implied value
-
-### Current Result
-
-Pending empirical execution.
-
----
-
-## 11. Valuation Comparison
-
-The final research should compare multiple valuation approaches.
-
-| Valuation Method | Implied Value / Share | Market Price | Upside / Downside |
-|---|---:|---:|---:|
-| DCF | Pending | Pending | Pending |
-| P/E | Pending | Pending | Pending |
-| EV/EBITDA | Pending | Pending | Pending |
-| Peer Valuation | Pending | Pending | Pending |
-| Consensus / Median | Pending | Pending | Pending |
-
-The objective is to avoid relying on a single valuation methodology.
-
----
+Final peer valuation results remain pending actual execution.
 
 ## 12. Sensitivity Analysis
 
-The DCF framework supports sensitivity analysis across:
+The platform supports:
 
-- WACC
-- Terminal growth
+- WACC / terminal-growth sensitivity
+- Revenue-growth sensitivity
+- EBITDA-margin sensitivity
 
-It also supports operating sensitivities for:
-
-- Revenue growth
-- EBITDA margin
-
-### WACC / Terminal Growth Sensitivity
-
-Final values should be generated after empirical pipeline execution.
-
-| WACC \ Terminal Growth | 2.0% | 2.5% | 3.0% |
-|---|---:|---:|---:|
-| 8.0% | Pending | Pending | Pending |
-| 9.0% | Pending | Pending | Pending |
-| 10.0% | Pending | Pending | Pending |
-| 11.0% | Pending | Pending | Pending |
-
-The final research should discuss how valuation changes under reasonable changes in discount-rate and terminal-growth assumptions.
-
----
+The purpose is to identify valuation ranges and key valuation drivers.
 
 ## 13. Fundamental Screening
 
@@ -342,35 +215,11 @@ The screening framework evaluates:
 - Net debt / EBITDA
 - Interest coverage
 
-### Current Result
+Actual screening results remain pending execution.
 
-Pending empirical execution.
+## 14. Investment Scoring
 
-The final output should identify which companies satisfy the selected fundamental thresholds.
-
----
-
-## 14. Fundamental Ranking
-
-Companies can be ranked using a weighted fundamental score.
-
-The current scoring framework incorporates:
-
-- ROIC
-- Revenue growth
-- FCF margin
-- EBITDA margin
-- Interest coverage
-
-### Current Result
-
-Pending empirical execution.
-
----
-
-## 15. Investment Score
-
-The investment score combines:
+The investment scoring framework incorporates:
 
 - Valuation upside
 - ROIC
@@ -378,229 +227,278 @@ The investment score combines:
 - FCF margin
 - Net debt / EBITDA
 
-The resulting score is normalized between 0 and 1.
+The resulting score is normalized between zero and one.
 
-### Current Result
+## 15. Investment Decision
 
-Pending empirical execution.
-
----
-
-## 16. Investment Decision
-
-The final research output will classify the target using:
+The investment decision framework combines:
 
 - Fundamental score
 - Valuation upside
 
-Possible classifications include:
+Potential classifications include:
 
 - Strong Buy Candidate
 - Buy Candidate
 - Watchlist
 - Low Conviction
 
-### Current Result
+No final investment classification is claimed until the empirical pipeline is executed.
 
-Pending empirical execution.
+## 16. Investment Thesis
 
-No investment classification should be assigned until the underlying financial and valuation results have been calculated.
-
----
-
-## 17. Investment Thesis
-
-The completed research should contain five components.
+The final investment thesis is intended to contain:
 
 ### Thesis
 
-The central fundamental argument supported by financial evidence.
+Core investment rationale supported by fundamental evidence.
 
 ### Catalysts
 
-Potential developments capable of changing market expectations.
+Potential events or developments that could improve operating performance or valuation.
 
 ### Risks
 
-Potential:
+Fundamental, valuation, balance-sheet, competitive, and macroeconomic risks.
 
-- Operating risks
-- Competitive risks
-- Financial risks
-- Valuation risks
-- Macroeconomic risks
+### Valuation View
 
-### Valuation
-
-Assessment based on:
-
-- DCF
-- Comparable companies
-- Scenario analysis
-- Sensitivity analysis
-- Current market price
+Comparison between intrinsic value estimates and market price.
 
 ### Conclusion
 
-Final evidence-based investment assessment.
+Evidence-based investment assessment.
 
----
+The final thesis remains pending empirical execution.
 
-## 18. Data Quality
+## 17. Integrated Research Engine
 
-The project contains explicit data-quality checks for:
+The project now includes a high-level research engine.
 
-- Required fields
-- Missing observations
-- Duplicate records
+The engine orchestrates:
+
+1. Configuration loading
+2. Financial-data retrieval
+3. Financial statement normalization
+4. Historical fundamental analysis
+5. Market-metric calculation
+6. Scenario construction
+7. Scenario valuation
+8. Consensus valuation
+9. Investment scoring
+10. Investment assessment
+
+This provides a coherent end-to-end research architecture.
+
+## 18. Centralized Configuration
+
+Research assumptions are stored in:
+
+`data/research_config.csv`
+
+The configuration layer separates:
+
+- Research universe
+- Valuation assumptions
+- Forecast assumptions
+- Scenario assumptions
+
+from the Python implementation.
+
+## 19. Data Quality
+
+The project includes:
+
+- Required-column validation
+- Missing-data reporting
+- Duplicate detection
 - Numeric conversion
-- Positive-value constraints
+- Positive-value validation
+- Configuration validation
+- Duplicate-parameter detection
 
-The final empirical results should document material data limitations where relevant.
+## 20. Testing
 
----
-
-## 19. Testing
-
-The project contains automated tests covering:
+Automated tests cover:
 
 - Financial analysis
-- Financial statement processing
+- Financial statements
+- Financial data
 - Data quality
+- Configuration
 - Forecasting
 - DCF valuation
-- WACC calculations
-- Comparable valuation
+- Capital cost
+- Comparable-company valuation
 - Peer valuation
 - Scenario valuation
 - Sensitivity analysis
 - Market metrics
 - Screening
 - Investment scoring
-- Investment decision
+- Investment decision logic
 - Research reporting
-- Valuation summaries
-- Assumption validation
+- Research engine orchestration
 
-GitHub Actions is configured to run the test suite automatically.
+## 21. Analytical Architecture
 
----
+The current analytical architecture is:
 
-## 20. Analytical Architecture
+**Configuration**
 
-The complete research architecture is:
+↓
 
-**Data Acquisition → Financial Statements → Data Quality → Historical Fundamentals → Market Metrics → Forecasting → WACC → DCF → Peer Valuation → Scenarios → Sensitivity → Screening → Investment Score → Investment Decision → Research Report**
+**Financial Data**
 
-The modular structure allows individual components to be tested and improved independently.
+↓
 
----
+**Financial Statement Normalization**
 
-## 21. Current Completion State
+↓
 
-### Implemented
+**Fundamental Analysis**
 
-- Research universe
-- Financial statement extraction
-- Financial statement normalization
-- Fundamental analysis
-- Market valuation metrics
-- Data-quality validation
-- Forecasting
-- WACC calculations
-- DCF valuation
-- Terminal-value analysis
-- Comparable-company valuation
-- Peer valuation
-- Bear/Base/Bull scenarios
-- Revenue-growth sensitivity
-- EBITDA-margin sensitivity
-- WACC/terminal-growth sensitivity
-- Fundamental screening
-- Fundamental ranking
-- Investment scoring
-- Investment decision framework
-- Research reporting
-- Unit tests
-- Automated CI testing
+↓
 
-### Pending Empirical Execution
+**Market Metrics**
 
-The following outputs remain intentionally unpopulated until the research workflow is executed against the underlying data:
+↓
 
-- Historical financial metrics
-- Current market metrics
-- Forecast values
-- WACC estimate
-- DCF enterprise value
-- DCF equity value
-- Intrinsic value per share
-- Peer multiples
-- Peer-implied valuation
-- Scenario valuations
-- Sensitivity tables
-- Fundamental ranking
-- Investment score
-- Final investment thesis
+**Forecasting**
 
----
+↓
+
+**Cost of Capital**
+
+↓
+
+**DCF / Relative Valuation**
+
+↓
+
+**Scenario Analysis**
+
+↓
+
+**Sensitivity Analysis**
+
+↓
+
+**Investment Score**
+
+↓
+
+**Investment Decision**
 
 ## 22. Research Integrity
 
-The project follows a strict rule:
+The repository explicitly distinguishes:
 
-**No fabricated empirical findings.**
+- Historical observations
+- Derived metrics
+- Analyst assumptions
+- Forecasts
+- Valuation outputs
+- Investment conclusions
 
-Historical results must come from financial data.
+No fabricated empirical results are included.
 
-Forecast results must come from explicit assumptions.
+## 23. Current Completion State
 
-Valuation results must come from reproducible model calculations.
+### Completed
 
-Investment conclusions must be supported by the resulting evidence.
+- Modular financial analysis
+- Financial statement processing
+- Market metrics
+- Forecasting
+- CAPM/WACC framework
+- DCF framework
+- Comparable-company framework
+- Peer valuation
+- Scenario valuation
+- Sensitivity analysis
+- Fundamental screening
+- Investment scoring
+- Investment decision framework
+- Research reporting
+- Data-quality framework
+- Centralized configuration
+- Integrated research engine
+- Unit-test framework
+- GitHub Actions testing
 
-This distinction is maintained throughout the research workflow.
+### Remaining
 
----
+The main remaining stage is empirical execution using actual financial and market data.
 
-## 23. Limitations
+That stage should generate:
+
+- Historical financial tables
+- Current market metrics
+- Peer valuation tables
+- Forecast tables
+- DCF valuation
+- Scenario valuations
+- Sensitivity tables
+- Fundamental rankings
+- Investment score
+- Investment conclusion
+- Research figures
+
+## 24. Limitations
 
 Important limitations include:
 
 - Public-data availability
-- Financial-statement classification differences
-- Data-provider limitations
+- Data-provider methodology
+- Financial-statement classification
 - Forecast uncertainty
-- WACC estimation uncertainty
+- WACC uncertainty
 - Terminal-value sensitivity
 - Peer-selection bias
 - Market-price volatility
 - Model specification risk
 - Assumption uncertainty
 
-The project is intended for educational and research purposes and does not constitute investment advice.
+## 25. Final Research Standard
 
----
+The completed research output should satisfy the following standard:
 
-## 24. Final Research Standard
+**Data → Calculation → Evidence → Valuation → Interpretation → Conclusion**
 
-The completed project should contain:
+Every empirical claim should be traceable to data or a documented modelling assumption.
 
-1. Actual historical financial data
-2. Actual calculated fundamental metrics
-3. Five-year operating forecasts
-4. Explicit WACC assumptions
-5. DCF valuation
-6. Comparable-company valuation
-7. Bear/Base/Bull valuation
-8. WACC/terminal-growth sensitivity analysis
-9. Operating sensitivity analysis
-10. Fundamental peer comparison
-11. Fundamental ranking
-12. Investment score
-13. Investment thesis
-14. Key catalysts
-15. Key risks
-16. Evidence-based conclusion
+Every valuation output should be reproducible from the stated inputs.
 
-The final research output should allow a reviewer to trace the investment conclusion from financial data through assumptions, analysis, valuation, and decision.
+Every investment conclusion should be supported by fundamental and valuation evidence.
+
+## 26. Intended Academic Use
+
+The project is suitable as a portfolio demonstration of:
+
+- Corporate finance
+- Equity valuation
+- Financial modelling
+- Quantitative finance
+- Python
+- Financial data analytics
+- Investment research
+- Research software engineering
+
+## 27. Portfolio Role
+
+This project complements the broader finance portfolio by adding company-level fundamental investment research to existing work in:
+
+- Credit risk
+- Portfolio optimization
+- Banking analytics
+- Financial data engineering
+- Investment banking
+
+Together, the projects demonstrate both quantitative and fundamental finance capabilities.
+
+## 28. Author
+
+**Sahand Mostafaei**
+
+BSc Electrical Engineering
