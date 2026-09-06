@@ -1,0 +1,24 @@
+parameter,value,unit,category,description
+target_ticker,MSFT,text,universe,Primary research target
+peer_1,GOOGL,text,universe,Primary peer
+peer_2,META,text,universe,Primary peer
+peer_3,AAPL,text,universe,Primary peer
+peer_4,AMZN,text,universe,Primary peer
+tax_rate,0.25,decimal,valuation,Assumed effective tax rate
+risk_free_rate,0.04,decimal,valuation,Assumed risk-free rate
+equity_risk_premium,0.055,decimal,valuation,Assumed equity risk premium
+pre_tax_cost_of_debt,0.045,decimal,valuation,Assumed pre-tax cost of debt
+forecast_years,5,years,forecast,DCF forecast horizon
+fcf_conversion,0.50,decimal,forecast,EBITDA-to-FCF conversion assumption
+bear_revenue_growth,0.03,decimal,scenario,Bear-case revenue growth
+base_revenue_growth,0.07,decimal,scenario,Base-case revenue growth
+bull_revenue_growth,0.12,decimal,scenario,Bull-case revenue growth
+bear_ebitda_margin,0.18,decimal,scenario,Bear-case EBITDA margin
+base_ebitda_margin,0.22,decimal,scenario,Base-case EBITDA margin
+bull_ebitda_margin,0.26,decimal,scenario,Bull-case EBITDA margin
+bear_wacc,0.11,decimal,scenario,Bear-case WACC
+base_wacc,0.09,decimal,scenario,Base-case WACC
+bull_wacc,0.08,decimal,scenario,Bull-case WACC
+bear_terminal_growth,0.02,decimal,scenario,Bear-case terminal growth
+base_terminal_growth,0.025,decimal,scenario,Base-case terminal growth
+bull_terminal_growth,0.03,decimal,scenario,Bull-case terminal growth
