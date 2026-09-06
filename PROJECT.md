@@ -1,46 +1,89 @@
 # Project Specification
 
-## Equity Research & Fundamental Valuation Platform
+# Equity Research & Fundamental Valuation Platform
 
 ## 1. Objective
 
-The objective is to develop a reproducible equity research framework combining financial statement analysis, fundamental screening, financial forecasting, valuation, peer analysis, scenario analysis, and investment-thesis construction.
+The objective of this project is to develop a modular equity research and fundamental valuation platform using Python.
 
-The framework is designed around a practical buy-side research workflow.
+The platform transforms financial statements and market information into:
+
+- Fundamental financial analysis
+- Operating forecasts
+- Cost-of-capital estimates
+- DCF valuation
+- Comparable-company valuation
+- Scenario analysis
+- Sensitivity analysis
+- Fundamental screening
+- Investment scoring
+- Investment decision support
+
+The project is designed to resemble a simplified institutional equity research workflow while maintaining reproducibility and transparent assumptions.
 
 ---
 
 ## 2. Research Workflow
 
-The analytical process is:
+The complete workflow is:
 
-Financial Data
-→ Financial Statements
-→ Fundamental Metrics
-→ Historical Performance
-→ Operating Forecast
-→ DCF Valuation
-→ Comparable Valuation
-→ Scenario Analysis
-→ Sensitivity Analysis
-→ Investment Score
-→ Investment Thesis
+1. Define research universe
+2. Acquire financial and market data
+3. Normalize financial statement data
+4. Validate data quality
+5. Calculate historical fundamentals
+6. Calculate market valuation metrics
+7. Construct operating forecasts
+8. Estimate cost of capital
+9. Perform DCF valuation
+10. Perform comparable-company valuation
+11. Run scenario analysis
+12. Run sensitivity analysis
+13. Screen and rank companies
+14. Generate investment score
+15. Generate investment decision
+16. Produce research outputs
 
 ---
 
-## 3. Financial Analysis
+## 3. Research Universe
 
-The framework evaluates:
+Initial target:
 
-### Growth
+**Microsoft (MSFT)**
+
+Initial peers:
+
+- Alphabet (GOOGL)
+- Meta Platforms (META)
+- Apple (AAPL)
+- Amazon (AMZN)
+
+The universe is stored in:
+
+`data/research_universe.csv`
+
+The architecture allows additional companies to be added without changing the core analytical modules.
+
+---
+
+## 4. Financial Analysis
+
+The platform evaluates historical company fundamentals.
+
+### 4.1 Growth
+
+Metrics include:
 
 - Revenue growth
 - EBITDA growth
 - EBIT growth
-- EPS growth
+- Net income growth
 - Free cash flow growth
 
-### Profitability
+### 4.2 Profitability
+
+Metrics include:
 
 - EBITDA margin
 - EBIT margin
@@ -49,61 +92,172 @@ The framework evaluates:
 - ROE
 - ROIC
 
-### Capital Efficiency
+### 4.3 Capital Efficiency
+
+Metrics include:
 
 - Invested capital
+- NOPAT
 - ROIC
-- Cash conversion
+- Free cash flow
 - FCF margin
 
-### Financial Strength
+### 4.4 Financial Strength
+
+Metrics include:
 
 - Total debt
 - Cash
 - Net debt
 - Net debt / EBITDA
 - Interest coverage
-- Liquidity
+
+The purpose is to evaluate the company's ability to generate returns while maintaining financial resilience.
 
 ---
 
-## 4. Forecasting
+## 5. Financial Statement Processing
 
-The operating forecast projects:
+The platform processes:
+
+### Income Statement
+
+- Revenue
+- EBIT
+- EBITDA
+- Net income
+- Depreciation and amortization
+
+### Balance Sheet
+
+- Total debt
+- Cash
+- Total assets
+- Shareholders' equity
+- Invested capital
+
+### Cash Flow Statement
+
+- Operating cash flow
+- Capital expenditure
+- Free cash flow
+
+Financial-statement line items are mapped into standardized analytical variables.
+
+This allows differences in source naming conventions to be handled through aliases.
+
+---
+
+## 6. Data Quality
+
+The platform includes validation for:
+
+- Missing required columns
+- Missing observations
+- Duplicate rows
+- Numeric conversion
+- Positive-value requirements
+
+Data-quality validation occurs before analytical outputs are interpreted.
+
+The objective is to prevent basic data problems from propagating into financial analysis and valuation.
+
+---
+
+## 7. Market Data
+
+Market analysis includes:
+
+- Current share price
+- Market capitalization
+- Enterprise value
+- Shares outstanding
+- EPS
+- P/E
+- EV/Sales
+- EV/EBITDA
+- FCF yield
+
+Enterprise value is calculated using:
+
+Market Capitalization + Debt - Cash
+
+These metrics connect operating fundamentals to market valuation.
+
+---
+
+## 8. Forecasting
+
+The initial forecast horizon is five years.
+
+The operating forecast uses assumptions for:
+
+- Revenue growth
+- EBITDA margin
+- FCF conversion
+
+The forecast produces:
 
 - Revenue
 - EBITDA
 - Free cash flow
 
-The forecast is driven by explicit assumptions rather than opaque model outputs.
-
-Key assumptions include:
-
-- Revenue growth
-- EBITDA margin
-- FCF conversion
-- Forecast horizon
+The forecast assumptions are explicitly separated from historical financial observations.
 
 ---
 
-## 5. DCF Valuation
+## 9. Cost of Capital
 
-The DCF framework consists of:
+The capital-cost module supports:
 
-1. Operating forecast
-2. Free cash flow forecast
-3. Explicit-period discounting
-4. Terminal value
+- Risk-free rate
+- Equity beta
+- Equity risk premium
+- Cost of equity
+- Pre-tax cost of debt
+- Tax rate
+- After-tax cost of debt
+- Market value of equity
+- Market value of debt
+- WACC
+
+The cost of equity follows the CAPM framework:
+
+Cost of Equity = Risk-Free Rate + Beta × Equity Risk Premium
+
+WACC combines the weighted cost of equity and after-tax debt.
+
+The model requires WACC to exceed terminal growth when calculating terminal value.
+
+---
+
+## 10. DCF Valuation
+
+The DCF framework calculates:
+
+1. Forecast free cash flow
+2. Present value of forecast free cash flow
+3. Terminal value
+4. Present value of terminal value
 5. Enterprise value
-6. Net debt adjustment
-7. Equity value
-8. Per-share value
+6. Equity value
+7. Intrinsic value per share
+
+The terminal value uses the perpetual-growth approach.
+
+The valuation framework explicitly separates:
+
+- Forecast assumptions
+- Discount rate
+- Terminal growth
+- Capital structure
+- Equity value calculation
 
 ---
 
-## 6. Relative Valuation
+## 11. Relative Valuation
 
-The framework evaluates:
+Comparable-company analysis uses:
 
 - P/E
 - EV/EBITDA
@@ -111,7 +265,7 @@ The framework evaluates:
 - Price/Sales
 - FCF yield
 
-Peer analysis uses descriptive statistics including:
+Peer statistics include:
 
 - Mean
 - Median
@@ -119,135 +273,359 @@ Peer analysis uses descriptive statistics including:
 - Maximum
 - Standard deviation
 
+Peer median multiples can be applied to target-company financial metrics to derive implied valuation estimates.
+
 ---
 
-## 7. Scenario Analysis
+## 12. Peer Analysis
 
-The framework uses three scenarios:
+The peer framework compares the target company against selected comparable companies.
+
+Comparison dimensions include:
+
+- Growth
+- Profitability
+- Capital efficiency
+- Leverage
+- Cash generation
+- Market valuation
+
+The peer-selection process should be interpreted carefully because companies within the same broad sector may still have materially different:
+
+- Business models
+- Growth profiles
+- Capital intensity
+- Margin structures
+- Risk profiles
+- Capital structures
+
+---
+
+## 13. Scenario Analysis
+
+Three scenarios are currently defined.
 
 ### Bear
 
-Conservative growth and profitability assumptions with a higher discount rate.
+- Revenue growth: 3.0%
+- EBITDA margin: 18.0%
+- WACC: 11.0%
+- Terminal growth: 2.0%
 
 ### Base
 
-Central operating and valuation assumptions.
+- Revenue growth: 7.0%
+- EBITDA margin: 22.0%
+- WACC: 9.0%
+- Terminal growth: 2.5%
 
 ### Bull
 
-Higher growth and profitability assumptions with a lower discount rate.
+- Revenue growth: 12.0%
+- EBITDA margin: 26.0%
+- WACC: 8.0%
+- Terminal growth: 3.0%
+
+These are model assumptions.
+
+They are not historical company observations.
+
+Each scenario produces an independent valuation.
 
 ---
 
-## 8. Sensitivity Analysis
+## 14. Sensitivity Analysis
 
-DCF valuation is evaluated across:
+The platform supports sensitivity analysis across:
+
+### DCF Variables
 
 - WACC
 - Terminal growth
 
-The purpose is to identify the valuation range and assess the robustness of the investment thesis.
+### Operating Variables
+
+- Revenue growth
+- EBITDA margin
+
+The purpose is to identify how sensitive intrinsic value is to major assumptions.
+
+Sensitivity analysis should be interpreted as a valuation-range analysis rather than as a prediction of a single precise share price.
 
 ---
 
-## 9. Fundamental Screening
+## 15. Fundamental Screening
 
-Companies can be screened according to:
+Companies can be screened using:
 
+- Minimum ROIC
+- Minimum revenue growth
+- Maximum net debt / EBITDA
+- Minimum FCF margin
+
+The framework can identify companies exhibiting combinations of:
+
+- Strong profitability
+- Attractive growth
+- Strong cash generation
+- Moderate leverage
+
+---
+
+## 16. Investment Scoring
+
+The investment scoring framework considers:
+
+- Valuation upside
 - ROIC
 - Revenue growth
 - FCF margin
 - Net debt / EBITDA
-- Interest coverage
 
-Thresholds are configurable.
+The current weighted structure gives greater importance to valuation and business quality while incorporating growth, cash generation, and leverage.
 
----
+Scores are normalized to a 0–1 scale.
 
-## 10. Investment Scoring
+Classification categories include:
 
-The platform produces a research-prioritization score using:
+- High Conviction
+- Attractive
+- Neutral
+- Cautious
+- Low Conviction
 
-- Valuation attractiveness
-- ROIC
-- Revenue growth
-- FCF margin
-- Balance-sheet leverage
-
-The score is not intended to function as a standalone trading signal.
+The score is a structured analytical aid and should not replace qualitative research.
 
 ---
 
-## 11. Investment Thesis
+## 17. Investment Decision
 
-The final research output is designed to organize:
+The investment decision framework combines:
+
+- Fundamental score
+- Valuation upside
+
+Possible classifications include:
+
+- Strong Buy Candidate
+- Buy Candidate
+- Watchlist
+- Low Conviction
+
+The decision output should always be evaluated together with:
+
+- Underlying financial metrics
+- Valuation assumptions
+- Peer positioning
+- Scenario analysis
+- Key risks
+- Catalysts
+
+---
+
+## 18. Investment Thesis
+
+The final research output should contain:
 
 ### Thesis
 
-Why the company may be attractive.
+The central fundamental argument.
 
 ### Catalysts
 
-Events or developments that could change market expectations.
+Potential developments that could cause market expectations to change.
 
 ### Risks
 
-Factors that could impair the investment thesis.
+Potential operating, financial, competitive, valuation, and market risks.
 
 ### Valuation
 
-Comparison between intrinsic value and market price.
+Comparison between:
+
+- Current market price
+- DCF value
+- Relative valuation
+- Scenario valuations
+- Peer-implied values
 
 ### Conclusion
 
-Overall assessment based on fundamental evidence.
+An evidence-based investment assessment.
 
 ---
 
-## 12. Reproducibility
+## 19. Research Reporting
 
-The system separates:
+The reporting framework supports:
 
-- Data acquisition
-- Data processing
+- Company snapshots
+- Peer comparison tables
+- Valuation summaries
+- Exportable research tables
+- Revenue/EBITDA visualizations
+- DCF sensitivity visualizations
+
+The final research output should make the analytical chain traceable from source data to conclusion.
+
+---
+
+## 20. Reproducibility
+
+The project separates:
+
+1. Retrieved financial data
+2. Processed financial data
+3. Historical metrics
+4. Analyst assumptions
+5. Forecast values
+6. Valuation calculations
+7. Investment conclusions
+
+This separation is important because an analyst assumption must not be presented as an observed historical result.
+
+---
+
+## 21. Analytical Architecture
+
+The platform follows the following modular architecture:
+
+**Data Acquisition → Financial Statements → Data Quality → Fundamentals → Market Metrics → Forecasting → WACC → DCF → Peer Valuation → Scenarios → Sensitivity → Screening → Investment Decision → Reporting**
+
+Each stage is implemented through dedicated Python modules.
+
+This architecture improves:
+
+- Transparency
+- Maintainability
+- Testability
+- Reproducibility
+- Extensibility
+
+---
+
+## 22. Testing
+
+The project uses automated unit testing for the principal analytical modules.
+
+Testing covers:
+
 - Financial analysis
+- Financial statements
+- Data quality
 - Forecasting
-- Valuation
-- Comparable analysis
+- DCF
+- Capital cost
+- Comparable valuation
+- Peer valuation
+- Scenario valuation
+- Sensitivity analysis
+- Market metrics
 - Screening
 - Investment scoring
-- Reporting
+- Investment decision
+- Research reporting
+- Valuation summaries
+- Assumption validation
 
-Automated tests validate core calculations.
-
----
-
-## 13. Limitations
-
-The framework depends on:
-
-- Data quality
-- Accounting classifications
-- Forecast assumptions
-- Peer selection
-- Discount rates
-- Terminal growth assumptions
-- Market conditions
-
-Valuation should therefore be interpreted as a range rather than a precise estimate.
+GitHub Actions is configured to execute the test suite automatically.
 
 ---
 
-## 14. Intended Application
+## 23. Software Structure
 
-The project is intended to demonstrate skills relevant to:
+### Data Layer
 
-- Private equity
-- Hedge funds
+Responsible for:
+
+- Market data
+- Financial statements
+- Research universe
+- Data normalization
+- Data validation
+
+### Analysis Layer
+
+Responsible for:
+
+- Fundamental metrics
+- Financial ratios
+- Market metrics
+- Screening
+- Ranking
+
+### Forecasting Layer
+
+Responsible for:
+
+- Revenue forecasts
+- EBITDA forecasts
+- FCF forecasts
+- Scenario assumptions
+
+### Valuation Layer
+
+Responsible for:
+
+- WACC
+- DCF
+- Terminal value
+- Relative valuation
+- Peer valuation
+- Sensitivity analysis
+
+### Decision Layer
+
+Responsible for:
+
+- Investment score
+- Valuation classification
+- Investment view
+- Investment thesis framework
+
+### Reporting Layer
+
+Responsible for:
+
+- Research tables
+- Company snapshots
+- Peer comparisons
+- Valuation summaries
+- Visual outputs
+
+---
+
+## 24. Limitations
+
+Important limitations include:
+
+- Public-data availability
+- Financial statement classification differences
+- Data-provider limitations
+- Forecast uncertainty
+- WACC estimation uncertainty
+- Terminal-value sensitivity
+- Peer-selection bias
+- Market-price volatility
+- Model specification risk
+- Assumption uncertainty
+
+The project is intended for educational and research purposes and does not constitute investment advice.
+
+---
+
+## 25. Intended Application
+
+The platform is designed to demonstrate skills relevant to:
+
 - Equity research
-- Investment banking
+- Investment analysis
 - Asset management
-- Fundamental investing
+- Hedge funds
+- Private equity
+- Investment banking
 - Financial modelling
+- Quantitative finance
+- Financial data analytics
 
-The primary emphasis is fundamental investment analysis combined with reproducible quantitative methods.
+The project emphasizes the intersection of financial analysis, valuation, quantitative methods, and software-based research workflows.
