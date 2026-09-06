@@ -9,7 +9,10 @@ from src.research_engine import (
 def test_research_engine_config_defaults():
     config = ResearchEngineConfig(
         target_ticker="MSFT",
-        peer_tickers=["GOOGL", "META"],
+        peer_tickers=[
+            "GOOGL",
+            "META",
+        ],
     )
 
     assert config.target_ticker == "MSFT"
@@ -25,7 +28,10 @@ def test_research_engine_initializes():
 
     engine = ResearchEngine(config)
 
-    assert engine.config.target_ticker == "MSFT"
+    assert (
+        engine.config.target_ticker
+        == "MSFT"
+    )
 
 
 def test_research_engine_market_metrics():
@@ -38,12 +44,30 @@ def test_research_engine_market_metrics():
 
     historical = pd.DataFrame(
         {
-            "revenue": [100.0, 110.0],
-            "ebitda": [25.0, 30.0],
-            "net_income": [15.0, 18.0],
-            "free_cash_flow": [12.0, 15.0],
-            "total_debt": [20.0, 22.0],
-            "cash": [10.0, 12.0],
+            "revenue": [
+                100.0,
+                110.0,
+            ],
+            "ebitda": [
+                25.0,
+                30.0,
+            ],
+            "net_income": [
+                15.0,
+                18.0,
+            ],
+            "free_cash_flow": [
+                12.0,
+                15.0,
+            ],
+            "total_debt": [
+                20.0,
+                22.0,
+            ],
+            "cash": [
+                10.0,
+                12.0,
+            ],
         }
     )
 
@@ -54,9 +78,11 @@ def test_research_engine_market_metrics():
         }
     )
 
-    result = engine.calculate_market_metrics(
-        historical_financials=historical,
-        market_data=market_data,
+    result = (
+        engine.calculate_market_metrics(
+            historical_financials=historical,
+            market_data=market_data,
+        )
     )
 
     assert result["market_cap"] == 500.0
@@ -76,9 +102,18 @@ def test_research_engine_scenario_structure():
 
     historical = pd.DataFrame(
         {
-            "revenue": [100.0, 110.0],
-            "total_debt": [20.0, 22.0],
-            "cash": [10.0, 12.0],
+            "revenue": [
+                100.0,
+                110.0,
+            ],
+            "total_debt": [
+                20.0,
+                22.0,
+            ],
+            "cash": [
+                10.0,
+                12.0,
+            ],
         }
     )
 
@@ -94,7 +129,10 @@ def test_research_engine_scenario_structure():
     )
 
     assert len(result) == 3
-    assert set(result["scenario"]) == {
+
+    assert set(
+        result["scenario"]
+    ) == {
         "Bear",
         "Base",
         "Bull",
@@ -134,14 +172,22 @@ def test_research_engine_investment_assessment():
         }
     )
 
-    result = engine.build_investment_assessment(
-        historical_financials=historical,
-        market_data=market_data,
-        scenario_valuations=scenarios,
+    result = (
+        engine.build_investment_assessment(
+            historical_financials=historical,
+            market_data=market_data,
+            scenario_valuations=scenarios,
+        )
     )
 
     assert result["market_price"] == 100.0
     assert result["consensus_value"] == 120.0
     assert result["valuation_upside"] == 0.20
-    assert 0 <= result["fundamental_score"] <= 1
+
+    assert (
+        0
+        <= result["fundamental_score"]
+        <= 1
+    )
+
     assert "investment_view" in result
