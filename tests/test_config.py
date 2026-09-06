@@ -22,11 +22,21 @@ def test_load_research_config():
 def test_get_config_value():
     config = pd.DataFrame(
         {
-            "parameter": ["target_ticker"],
-            "value": ["MSFT"],
-            "unit": ["text"],
-            "category": ["universe"],
-            "description": ["Target"],
+            "parameter": [
+                "target_ticker"
+            ],
+            "value": [
+                "MSFT"
+            ],
+            "unit": [
+                "text"
+            ],
+            "category": [
+                "universe"
+            ],
+            "description": [
+                "Target"
+            ],
         }
     )
 
@@ -42,11 +52,21 @@ def test_get_config_value():
 def test_get_float_config():
     config = pd.DataFrame(
         {
-            "parameter": ["tax_rate"],
-            "value": ["0.25"],
-            "unit": ["decimal"],
-            "category": ["valuation"],
-            "description": ["Tax"],
+            "parameter": [
+                "tax_rate"
+            ],
+            "value": [
+                "0.25"
+            ],
+            "unit": [
+                "decimal"
+            ],
+            "category": [
+                "valuation"
+            ],
+            "description": [
+                "Tax"
+            ],
         }
     )
 
@@ -62,11 +82,21 @@ def test_get_float_config():
 def test_get_int_config():
     config = pd.DataFrame(
         {
-            "parameter": ["forecast_years"],
-            "value": ["5"],
-            "unit": ["years"],
-            "category": ["forecast"],
-            "description": ["Forecast"],
+            "parameter": [
+                "forecast_years"
+            ],
+            "value": [
+                "5"
+            ],
+            "unit": [
+                "years"
+            ],
+            "category": [
+                "forecast"
+            ],
+            "description": [
+                "Forecast"
+            ],
         }
     )
 
@@ -82,11 +112,21 @@ def test_get_int_config():
 def test_missing_parameter():
     config = pd.DataFrame(
         {
-            "parameter": ["tax_rate"],
-            "value": ["0.25"],
-            "unit": ["decimal"],
-            "category": ["valuation"],
-            "description": ["Tax"],
+            "parameter": [
+                "tax_rate"
+            ],
+            "value": [
+                "0.25"
+            ],
+            "unit": [
+                "decimal"
+            ],
+            "category": [
+                "valuation"
+            ],
+            "description": [
+                "Tax"
+            ],
         }
     )
 
@@ -95,3 +135,46 @@ def test_missing_parameter():
             config,
             "missing_parameter",
         )
+
+
+def test_duplicate_parameters_are_rejected():
+    config = pd.DataFrame(
+        {
+            "parameter": [
+                "tax_rate",
+                "tax_rate",
+            ],
+            "value": [
+                "0.25",
+                "0.30",
+            ],
+            "unit": [
+                "decimal",
+                "decimal",
+            ],
+            "category": [
+                "valuation",
+                "valuation",
+            ],
+            "description": [
+                "Tax",
+                "Tax",
+            ],
+        }
+    )
+
+    path = "tests/temp_duplicate_config.csv"
+
+    config.to_csv(
+        path,
+        index=False,
+    )
+
+    try:
+        with pytest.raises(ValueError):
+            load_research_config(path)
+    finally:
+        import os
+
+        if os.path.exists(path):
+            os.remove(path)
