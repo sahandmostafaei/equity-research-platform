@@ -4,9 +4,11 @@ import numpy as np
 import pandas as pd
 
 
-def calculate_growth(series: pd.Series) -> pd.Series:
+def calculate_growth(
+    series: pd.Series,
+) -> pd.Series:
     """
-    Calculate year-over-year growth.
+    Calculate period-over-period growth.
     """
     return series.pct_change()
 
@@ -18,6 +20,11 @@ def calculate_margin(
     """
     Calculate a financial margin.
     """
+    denominator = denominator.replace(
+        0,
+        np.nan,
+    )
+
     return numerator / denominator
 
 
@@ -27,9 +34,12 @@ def calculate_roic(
 ) -> pd.Series:
     """
     Calculate return on invested capital.
-
-    ROIC = NOPAT / Invested Capital
     """
+    invested_capital = invested_capital.replace(
+        0,
+        np.nan,
+    )
+
     return nopat / invested_capital
 
 
@@ -40,6 +50,11 @@ def calculate_roa(
     """
     Calculate return on assets.
     """
+    total_assets = total_assets.replace(
+        0,
+        np.nan,
+    )
+
     return net_income / total_assets
 
 
@@ -50,7 +65,17 @@ def calculate_roe(
     """
     Calculate return on equity.
     """
-    return net_income / shareholders_equity
+    shareholders_equity = (
+        shareholders_equity.replace(
+            0,
+            np.nan,
+        )
+    )
+
+    return (
+        net_income
+        / shareholders_equity
+    )
 
 
 def calculate_net_debt(
@@ -70,6 +95,11 @@ def calculate_net_debt_to_ebitda(
     """
     Calculate net debt / EBITDA.
     """
+    ebitda = ebitda.replace(
+        0,
+        np.nan,
+    )
+
     return net_debt / ebitda
 
 
@@ -78,12 +108,16 @@ def calculate_interest_coverage(
     interest_expense: pd.Series,
 ) -> pd.Series:
     """
-    Calculate EBIT interest coverage.
-
-    Absolute interest expense is used because financial statements
-    may report interest expense as a negative value.
+    Calculate EBIT / absolute interest expense.
     """
-    denominator = interest_expense.abs().replace(0, np.nan)
+    denominator = (
+        interest_expense.abs()
+        .replace(
+            0,
+            np.nan,
+        )
+    )
+
     return ebit / denominator
 
 
@@ -94,12 +128,16 @@ def calculate_free_cash_flow(
     """
     Calculate free cash flow.
 
-    FCF = Operating Cash Flow - Capital Expenditure
+    CapEx is standardized using its absolute value
+    because cash-flow statements may report CapEx
+    as a negative cash outflow.
 
-    Capital expenditure is treated as a positive cash investment
-    when supplied to this function.
+        FCF = OCF - |CapEx|
     """
-    return operating_cash_flow - capital_expenditure
+    return (
+        operating_cash_flow
+        - capital_expenditure.abs()
+    )
 
 
 def calculate_fcf_margin(
@@ -107,9 +145,17 @@ def calculate_fcf_margin(
     revenue: pd.Series,
 ) -> pd.Series:
     """
-    Calculate free cash flow margin.
+    Calculate free-cash-flow margin.
     """
-    return free_cash_flow / revenue
+    revenue = revenue.replace(
+        0,
+        np.nan,
+    )
+
+    return (
+        free_cash_flow
+        / revenue
+    )
 
 
 def build_fundamental_metrics(
@@ -127,35 +173,70 @@ def build_fundamental_metrics(
     interest_expense: pd.Series,
 ) -> pd.DataFrame:
     """
-    Build a consolidated fundamental-analysis table.
+    Build a standardized fundamental-analysis dataset.
     """
-    free_cash_flow = calculate_free_cash_flow(
-        operating_cash_flow,
-        capital_expenditure,
+
+    free_cash_flow = (
+        calculate_free_cash_flow(
+            operating_cash_flow,
+            capital_expenditure,
+        )
     )
 
-    net_debt = calculate_net_debt(total_debt, cash)
+    net_debt = calculate_net_debt(
+        total_debt,
+        cash,
+    )
 
     metrics = pd.DataFrame(
         {
-            "revenue_growth": calculate_growth(revenue),
-            "ebitda_growth": calculate_growth(ebitda),
-            "ebitda_margin": calculate_margin(ebitda, revenue),
-            "ebit_margin": calculate_margin(ebit, revenue),
-            "net_margin": calculate_margin(net_income, revenue),
-            "roa": calculate_roa(net_income, total_assets),
-            "roe": calculate_roe(net_income, shareholders_equity),
-            "roic": calculate_roic(nopat_from_ebit(ebit), invested_capital),
-            "free_cash_flow": free_cash_flow,
-            "fcf_margin": calculate_fcf_margin(free_cash_flow, revenue),
-            "net_debt": net_debt,
-            "net_debt_to_ebitda": calculate_net_debt_to_ebitda(
-                net_debt,
-                ebitda,
+            "revenue_growth": calculate_growth(
+                revenue
             ),
-            "interest_coverage": calculate_interest_coverage(
+            "ebitda_growth": calculate_growth(
+                ebitda
+            ),
+            "ebitda_margin": calculate_margin(
+                ebitda,
+                revenue,
+            ),
+            "ebit_margin": calculate_margin(
                 ebit,
-                interest_expense,
+                revenue,
+            ),
+            "net_margin": calculate_margin(
+                net_income,
+                revenue,
+            ),
+            "roa": calculate_roa(
+                net_income,
+                total_assets,
+            ),
+            "roe": calculate_roe(
+                net_income,
+                shareholders_equity,
+            ),
+            "roic": calculate_roic(
+                nopat_from_ebit(ebit),
+                invested_capital,
+            ),
+            "free_cash_flow": free_cash_flow,
+            "fcf_margin": calculate_fcf_margin(
+                free_cash_flow,
+                revenue,
+            ),
+            "net_debt": net_debt,
+            "net_debt_to_ebitda": (
+                calculate_net_debt_to_ebitda(
+                    net_debt,
+                    ebitda,
+                )
+            ),
+            "interest_coverage": (
+                calculate_interest_coverage(
+                    ebit,
+                    interest_expense,
+                )
             ),
         }
     )
@@ -168,6 +249,13 @@ def nopat_from_ebit(
     tax_rate: float = 0.25,
 ) -> pd.Series:
     """
-    Estimate NOPAT from EBIT using a normalized tax rate.
+    Calculate NOPAT from EBIT.
     """
-    return ebit * (1 - tax_rate)
+    if not 0 <= tax_rate <= 1:
+        raise ValueError(
+            "Tax rate must be between 0 and 1."
+        )
+
+    return ebit * (
+        1 - tax_rate
+    )
