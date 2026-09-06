@@ -20,7 +20,9 @@ figures/*.jpg
 figures/*.jpeg
 
 data/raw/*
-data/processed/*
+data/processed/*.csv
+data/processed/*.xlsx
+data/processed/*.xls
 
 .idea/
 .vscode/
