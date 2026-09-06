@@ -2,77 +2,94 @@ import pandas as pd
 import pytest
 
 from src.peer_valuation import (
-    calculate_peer_implied_values,
+    calculate_enterprise_implied_values,
+    calculate_equity_implied_values,
     calculate_peer_median_multiples,
-    compare_target_to_peers,
 )
 
 
-def test_peer_median():
+def test_peer_median_multiples():
     multiples = pd.DataFrame(
         {
-            "pe": [20.0, 25.0, 30.0],
-            "ev_ebitda": [15.0, 17.0, 19.0],
+            "pe": [20.0, 24.0, 22.0],
+            "ev_ebitda": [15.0, 17.0, 16.0],
         }
     )
 
-    result = calculate_peer_median_multiples(
-        multiples
+    result = (
+        calculate_peer_median_multiples(
+            multiples
+        )
     )
 
-    assert result["pe"] == 25.0
-    assert result["ev_ebitda"] == 17.0
+    assert result["pe"] == 22.0
+    assert result["ev_ebitda"] == 16.0
 
 
-def test_peer_implied_values():
-    target = pd.Series(
+def test_equity_valuation():
+    target_metrics = pd.Series(
         {
             "eps": 5.0,
-            "ebitda": 100.0,
-            "revenue": 500.0,
-            "free_cash_flow": 50.0,
+            "revenue_per_share": 20.0,
         }
     )
 
     peer_medians = pd.Series(
         {
             "pe": 20.0,
-            "ev_ebitda": 15.0,
-            "ev_sales": 5.0,
+            "price_sales": 4.0,
         }
     )
 
-    result = calculate_peer_implied_values(
-        target,
-        peer_medians,
+    result = (
+        calculate_equity_implied_values(
+            target_metrics=target_metrics,
+            peer_medians=peer_medians,
+            shares_outstanding=100.0,
+        )
     )
 
     assert result["pe"] == 100.0
-    assert result["ev_ebitda"] == 1500.0
-    assert result["ev_sales"] == 2500.0
+    assert result["price_sales"] == 80.0
 
 
-def test_target_peer_comparison():
-    target = pd.Series(
+def test_enterprise_valuation_bridges_to_equity():
+    target_metrics = pd.Series(
         {
-            "pe": 20.0,
-            "ev_ebitda": 15.0,
+            "revenue": 1000.0,
+            "ebitda": 200.0,
         }
     )
 
-    peers = pd.Series(
+    peer_medians = pd.Series(
         {
-            "pe": 25.0,
-            "ev_ebitda": 20.0,
+            "ev_sales": 3.0,
+            "ev_ebitda": 10.0,
         }
     )
 
-    result = compare_target_to_peers(
-        target,
-        peers,
+    result = (
+        calculate_enterprise_implied_values(
+            target_metrics=target_metrics,
+            peer_medians=peer_medians,
+            total_debt=200.0,
+            cash=100.0,
+            shares_outstanding=100.0,
+        )
     )
 
-    assert result.loc[
-        "pe",
-        "premium_discount",
-    ] == pytest.approx(-0.20)
+    # EV/Sales:
+    # 1000 * 3 = 3000 EV
+    # 3000 - 100 net debt = 2900 equity
+    # 2900 / 100 shares = 29
+    assert result["ev_sales"] == pytest.approx(
+        29.0
+    )
+
+    # EV/EBITDA:
+    # 200 * 10 = 2000 EV
+    # 2000 - 100 net debt = 1900 equity
+    # 1900 / 100 shares = 19
+    assert result["ev_ebitda"] == pytest.approx(
+        19.0
+    )
