@@ -4,6 +4,20 @@ import pandas as pd
 import yfinance as yf
 
 
+def _get_info(
+    ticker: str,
+) -> dict:
+    """
+    Retrieve Yahoo Finance company information.
+    """
+    info = yf.Ticker(ticker).info
+
+    if not isinstance(info, dict):
+        return {}
+
+    return info
+
+
 def get_current_price(
     ticker: str,
 ) -> float:
@@ -11,9 +25,9 @@ def get_current_price(
     Retrieve the latest available market price.
     """
 
-    data = yf.Ticker(ticker)
+    ticker_obj = yf.Ticker(ticker)
 
-    history = data.history(
+    history = ticker_obj.history(
         period="5d",
     )
 
@@ -22,8 +36,15 @@ def get_current_price(
             f"No market price available for {ticker}."
         )
 
+    prices = history["Close"].dropna()
+
+    if prices.empty:
+        raise ValueError(
+            f"No closing price available for {ticker}."
+        )
+
     return float(
-        history["Close"].dropna().iloc[-1]
+        prices.iloc[-1]
     )
 
 
@@ -34,7 +55,7 @@ def get_market_cap(
     Retrieve the latest market capitalization.
     """
 
-    info = yf.Ticker(ticker).info
+    info = _get_info(ticker)
 
     market_cap = info.get(
         "marketCap"
@@ -42,10 +63,13 @@ def get_market_cap(
 
     if market_cap is None:
         raise ValueError(
-            f"Market capitalization unavailable for {ticker}."
+            "Market capitalization unavailable "
+            f"for {ticker}."
         )
 
-    return float(market_cap)
+    return float(
+        market_cap
+    )
 
 
 def get_shares_outstanding(
@@ -55,7 +79,7 @@ def get_shares_outstanding(
     Retrieve shares outstanding.
     """
 
-    info = yf.Ticker(ticker).info
+    info = _get_info(ticker)
 
     shares = info.get(
         "sharesOutstanding"
@@ -63,31 +87,138 @@ def get_shares_outstanding(
 
     if shares is None:
         raise ValueError(
-            f"Shares outstanding unavailable for {ticker}."
+            "Shares outstanding unavailable "
+            f"for {ticker}."
         )
 
-    return float(shares)
+    return float(
+        shares
+    )
+
+
+def get_beta(
+    ticker: str,
+    default: float = 1.0,
+) -> float:
+    """
+    Retrieve beta.
+
+    A neutral beta of 1.0 is used only when
+    Yahoo Finance does not provide a usable value.
+    """
+
+    info = _get_info(ticker)
+
+    beta = info.get(
+        "beta"
+    )
+
+    if beta is None:
+        return float(default)
+
+    try:
+        beta = float(beta)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return float(default)
+
+    if beta <= 0:
+        return float(default)
+
+    return beta
+
+
+def get_total_debt(
+    ticker: str,
+) -> float:
+    """
+    Retrieve total debt.
+
+    Returns zero when Yahoo Finance does not
+    provide a debt value.
+    """
+
+    info = _get_info(ticker)
+
+    debt = info.get(
+        "totalDebt"
+    )
+
+    if debt is None:
+        return 0.0
+
+    try:
+        return float(debt)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return 0.0
 
 
 def get_basic_market_data(
     ticker: str,
 ) -> pd.Series:
     """
-    Return a compact market-data snapshot.
+    Return a standardized market-data snapshot.
     """
 
-    info = yf.Ticker(ticker).info
+    info = _get_info(ticker)
+
+    current_price = info.get(
+        "currentPrice"
+    )
+
+    if current_price is None:
+        try:
+            current_price = get_current_price(
+                ticker
+            )
+        except ValueError:
+            current_price = None
+
+    market_cap = info.get(
+        "marketCap"
+    )
+
+    shares_outstanding = info.get(
+        "sharesOutstanding"
+    )
+
+    beta = info.get(
+        "beta"
+    )
+
+    total_debt = info.get(
+        "totalDebt"
+    )
+
+    if beta is None:
+        beta = 1.0
+
+    if total_debt is None:
+        total_debt = 0.0
 
     fields = {
         "ticker": ticker,
-        "company": info.get("longName"),
-        "sector": info.get("sector"),
-        "industry": info.get("industry"),
-        "market_cap": info.get("marketCap"),
-        "current_price": info.get("currentPrice"),
-        "shares_outstanding": info.get(
-            "sharesOutstanding"
+        "company": info.get(
+            "longName"
         ),
+        "sector": info.get(
+            "sector"
+        ),
+        "industry": info.get(
+            "industry"
+        ),
+        "market_cap": market_cap,
+        "current_price": current_price,
+        "shares_outstanding": (
+            shares_outstanding
+        ),
+        "beta": beta,
+        "total_debt": total_debt,
         "trailing_pe": info.get(
             "trailingPE"
         ),
@@ -105,4 +236,7 @@ def get_basic_market_data(
         ),
     }
 
-    return pd.Series(fields)
+    return pd.Series(
+        fields,
+        dtype="object",
+    )
