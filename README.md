@@ -1,547 +1,512 @@
 # Equity Research & Fundamental Valuation Platform
 
-Python-based equity research platform for fundamental company analysis, financial statement analysis, financial modelling, valuation, peer comparison, scenario analysis, sensitivity analysis, and systematic investment screening.
+A modular equity-research platform for fundamental analysis, financial modelling, valuation, peer analysis, scenario analysis, and investment decision support.
 
-## Objective
+The project follows a professional equity-research workflow:
 
-This project implements a modular equity research workflow that transforms financial statements and market information into structured fundamental analysis, valuation outputs, and an investment assessment.
+**Financial Statements → Fundamental Analysis → Market Analysis → Forecasting → DCF → Comparable Companies → Scenario Analysis → Investment Assessment**
 
-The architecture is designed to resemble a simplified institutional equity research workflow:
+---
 
-**Configuration → Financial Data → Fundamental Analysis → Forecasting → Cost of Capital → DCF → Relative Valuation → Scenarios → Sensitivity → Investment Assessment**
+## Research Target
 
-The project emphasizes:
+The default research universe contains one target company and four comparable companies.
 
-- Financial analysis
-- Fundamental valuation
-- Financial modelling
-- Quantitative screening
-- Reproducibility
-- Data-quality controls
-- Unit testing
-- Modular software architecture
+| Role | Company | Ticker |
+|---|---|---|
+| Target | Microsoft | MSFT |
+| Peer | Alphabet | GOOGL |
+| Peer | Meta Platforms | META |
+| Peer | Apple | AAPL |
+| Peer | Amazon | AMZN |
 
-## Research Workflow
-
-1. Define the research universe
-2. Load centralized research configuration
-3. Retrieve financial statements
-4. Retrieve market information
-5. Normalize financial statement data
-6. Validate financial data
-7. Calculate historical financial metrics
-8. Analyze growth and profitability
-9. Analyze capital efficiency
-10. Analyze financial strength
-11. Calculate market valuation metrics
-12. Construct operating forecasts
-13. Estimate cost of capital
-14. Perform DCF valuation
-15. Perform comparable-company valuation
-16. Run Bear/Base/Bull scenarios
-17. Perform valuation sensitivity analysis
-18. Screen and rank companies
-19. Calculate investment scores
-20. Generate an investment assessment
-21. Produce research tables and visualizations
-
-## Research Universe
-
-The initial research universe contains:
-
-| Ticker | Company | Sector | Role |
-|---|---|---|---|
-| MSFT | Microsoft | Technology | Target |
-| GOOGL | Alphabet | Technology | Peer |
-| META | Meta Platforms | Technology | Peer |
-| AAPL | Apple | Technology | Peer |
-| AMZN | Amazon | Consumer Discretionary | Peer |
-
-The universe is defined in:
-
-`data/research_universe.csv`
-
-Research assumptions and modelling parameters are maintained separately in:
+The research universe is configurable through:
 
 `data/research_config.csv`
 
-## Fundamental Analysis
+---
 
-The platform evaluates companies across several fundamental dimensions.
+## Key Capabilities
 
-### Growth
-
-- Revenue growth
-- EBITDA growth
-- Earnings growth
-- Free cash flow growth
-
-### Profitability
-
-- EBITDA margin
-- EBIT margin
-- Net margin
-- ROA
-- ROE
-- ROIC
-
-### Capital Efficiency
-
-- NOPAT
-- Invested capital
-- ROIC
-- Free cash flow
-- FCF margin
-
-### Financial Strength
-
-- Total debt
-- Cash
-- Net debt
-- Net debt / EBITDA
-- Interest coverage
-
-## Financial Statement Processing
-
-The platform processes:
-
-- Income statements
-- Balance sheets
-- Cash-flow statements
-
-Standardized analytical variables include:
+### Fundamental Analysis
 
 - Revenue
-- EBIT
 - EBITDA
+- EBIT
 - Net income
-- Depreciation and amortization
 - Operating cash flow
 - Capital expenditure
 - Free cash flow
-- Total debt
-- Cash
-- Shareholders' equity
 - NOPAT
 - Invested capital
+- Revenue growth
+- EBITDA margin
+- EBIT margin
+- Net margin
+- FCF margin
+- ROIC
+- ROA
+- ROE
+- Net debt
+- Net debt / EBITDA
 
-Financial statement line-item aliases are mapped into standardized analytical variables.
+### Market Analysis
 
-## Market Analysis
-
-Market data is used to calculate:
-
+- Current share price
 - Market capitalization
 - Enterprise value
-- Current share price
 - Shares outstanding
-- EPS
+- Beta
+- Debt
+- Cash
+
+### Valuation
+
+- Discounted Cash Flow
+- Terminal value
+- Enterprise value
+- Equity value
+- Implied value per share
+- Margin of safety
+- Upside / downside
+- P/E valuation
+- Price / Sales valuation
+- EV / Sales valuation
+- EV / EBITDA valuation
+- Peer median valuation
+
+### Comparable Company Analysis
+
+The platform evaluates:
+
 - P/E
-- EV/Sales
-- EV/EBITDA
+- EV / Sales
+- EV / EBITDA
+- Price / Sales
 - FCF yield
+- Peer median multiples
+- Target premium / discount
+- Implied valuation
 
-These metrics connect operating fundamentals with market valuation.
+Enterprise-value multiples are correctly bridged from enterprise value to equity value.
 
-## Forecasting
+### Scenario Analysis
 
-The forecasting framework produces a five-year operating forecast using configurable assumptions for:
+The valuation framework supports:
+
+- Bear case
+- Base case
+- Bull case
+
+Each scenario can specify:
 
 - Revenue growth
 - EBITDA margin
-- FCF conversion
+- WACC
+- Terminal growth
 - Forecast horizon
+- FCF conversion
 
-Forecast outputs include:
+### Investment Assessment
 
-- Revenue
-- EBITDA
-- Free cash flow
+The investment framework incorporates:
 
-The modelling assumptions are separated from the valuation implementation.
+- Valuation upside
+- ROIC
+- Revenue growth
+- FCF margin
+- Net debt / EBITDA
 
-## Cost of Capital
+These inputs are combined into a structured investment score and classification.
 
-The project includes a CAPM/WACC framework using:
+---
 
-- Risk-free rate
-- Equity beta
-- Equity risk premium
-- Cost of equity
-- Pre-tax cost of debt
-- Tax rate
-- After-tax cost of debt
-- Market-value capital structure
+## Architecture
 
-The discount rate is therefore an explicit modelling input rather than an unexplained hard-coded value.
+The project separates data ingestion, financial analysis, valuation, peer analysis, scenario analysis, research orchestration, and output generation.
 
-## DCF Valuation
+**Data → Analysis → Valuation → Investment Assessment → Research Outputs**
+
+Main components:
+
+- `data_loader.py` — market and financial-data retrieval
+- `financial_statements.py` — statement normalization and accounting calculations
+- `financial_data.py` — standardized historical financial dataset
+- `financial_analysis.py` — fundamental metrics
+- `market_data.py` — market and capital-structure data
+- `forecasting.py` — financial forecasting
+- `capital_cost.py` — cost-of-capital calculations
+- `valuation.py` — core valuation functions
+- `dcf_model.py` — DCF modelling
+- `peer_valuation.py` — comparable-company valuation
+- `comparables.py` — valuation multiples
+- `scenarios.py` — scenario definitions and forecasts
+- `scenario_valuation.py` — scenario-based valuation
+- `investment_thesis.py` — investment scoring
+- `investment_decision.py` — investment classification
+- `research_engine.py` — integrated research workflow
+- `research_outputs.py` — output generation
+- `research_report.py` — research reporting
+- `data_quality.py` — validation and data-quality checks
+
+---
+
+## Research Workflow
+
+1. Load research configuration
+2. Identify target and peer companies
+3. Retrieve financial statements
+4. Normalize accounting line items
+5. Calculate historical financial metrics
+6. Retrieve market data
+7. Calculate enterprise value and market metrics
+8. Estimate cost of capital
+9. Forecast operating performance
+10. Run DCF valuation
+11. Calculate comparable-company multiples
+12. Calculate peer median multiples
+13. Estimate implied peer-based valuation
+14. Run bear, base, and bull scenarios
+15. Consolidate valuation outputs
+16. Calculate investment assessment
+17. Save structured research outputs
+
+---
+
+## Financial Modelling
+
+Free cash flow is standardized as:
+
+**FCF = Operating Cash Flow − |Capital Expenditure|**
+
+This handles differences in capital-expenditure sign conventions across data sources.
 
 The DCF framework calculates:
 
-- Present value of forecast free cash flow
+- Present value of forecast cash flows
 - Terminal value
 - Present value of terminal value
 - Enterprise value
 - Equity value
-- Intrinsic value per share
+- Implied value per share
 
-The model validates the fundamental terminal-value condition:
+The valuation framework validates the relationship between WACC and terminal growth before calculating terminal value.
 
-**WACC > terminal growth**
+---
 
-This prevents mathematically invalid Gordon-growth terminal values.
+## Cost of Capital
 
-## Relative Valuation
+The model estimates cost of equity using CAPM:
 
-Comparable-company analysis includes:
+**Cost of Equity = Risk-Free Rate + Beta × Equity Risk Premium**
+
+After-tax cost of debt is calculated as:
+
+**After-Tax Cost of Debt = Pre-Tax Cost of Debt × (1 − Tax Rate)**
+
+WACC is then calculated using market-value weights of equity and debt.
+
+The resulting WACC is also exposed as a research output for interpretation and validation.
+
+---
+
+## Comparable Companies
+
+The comparable-company framework separates equity-value and enterprise-value methodologies.
+
+### Equity-value multiples
+
+Examples:
 
 - P/E
-- EV/EBITDA
-- EV/Sales
-- Price/Sales
-- FCF yield
+- Price / Sales
 
-Peer statistics include:
+### Enterprise-value multiples
 
-- Mean
-- Median
-- Minimum
-- Maximum
-- Standard deviation
+Examples:
 
-Peer valuation can be used alongside DCF analysis to provide a second valuation perspective.
+- EV / EBITDA
+- EV / Sales
 
-## Scenario Analysis
+Enterprise-value approaches are subsequently bridged to equity value using:
 
-The platform supports three scenarios:
+**Equity Value = Enterprise Value − Debt + Cash**
 
-| Scenario | Revenue Growth | EBITDA Margin | WACC | Terminal Growth |
-|---|---:|---:|---:|---:|
-| Bear | 3.0% | 18.0% | 11.0% | 2.0% |
-| Base | 7.0% | 22.0% | 9.0% | 2.5% |
-| Bull | 12.0% | 26.0% | 8.0% | 3.0% |
+This distinction is important for avoiding incorrect application of valuation multiples.
 
-These are modelling assumptions and are not historical company results.
+---
 
-Each scenario generates a separate DCF valuation.
+## Scenario Framework
 
-## Sensitivity Analysis
+The model uses three scenarios.
 
-The project supports sensitivity analysis across:
+### Bear
 
-- WACC
-- Terminal growth
-- Revenue growth
-- EBITDA margin
+- Lower revenue growth
+- Lower EBITDA margin
+- Higher WACC
+- Lower terminal growth
 
-The objective is to evaluate valuation ranges instead of relying exclusively on a single point estimate.
+### Base
 
-## Fundamental Screening
+- Central operating assumptions
+- Central WACC
+- Central terminal growth
 
-Companies can be screened using:
+### Bull
 
-- ROIC
-- Revenue growth
-- FCF margin
-- Net debt / EBITDA
-- Interest coverage
+- Higher revenue growth
+- Higher EBITDA margin
+- Lower WACC
+- Higher terminal growth
 
-The framework can identify companies exhibiting combinations of:
-
-- Strong profitability
-- Attractive growth
-- Strong cash generation
-- Manageable leverage
-- Strong debt-service capacity
-
-## Investment Scoring
-
-The investment scoring framework considers:
-
-- Valuation attractiveness
-- ROIC
-- Revenue growth
-- FCF margin
-- Net debt / EBITDA
-
-The resulting score is classified into:
-
-- High Conviction
-- Attractive
-- Neutral
-- Cautious
-- Low Conviction
-
-The score is a quantitative research framework and does not replace analyst judgment.
-
-## Investment Decision
-
-The platform combines:
-
-1. Fundamental quality
-2. Growth
-3. Cash generation
-4. Balance-sheet strength
-5. Valuation
-
-The resulting assessment can classify a company as:
-
-- Strong Buy Candidate
-- Buy Candidate
-- Watchlist
-- Low Conviction
-
-These classifications are model outputs and must be interpreted with the underlying assumptions and evidence.
-
-## Integrated Research Engine
-
-The project contains a high-level `ResearchEngine` that orchestrates the major analytical components.
-
-The integrated architecture is:
-
-**Research Configuration**
-↓
-**Financial Statements**
-↓
-**Historical Fundamental Analysis**
-↓
-**Market Metrics**
-↓
-**Operating Forecasts**
-↓
-**Scenario DCF Valuation**
-↓
-**Consensus Valuation**
-↓
-**Investment Score**
-↓
-**Investment Assessment**
-
-This separates individual analytical functions from the higher-level research workflow.
-
-## Centralized Configuration
-
-Research assumptions are maintained in:
+All scenario assumptions are stored in:
 
 `data/research_config.csv`
 
-The configuration contains:
+---
 
-- Research target
-- Peer universe
+## Configuration
+
+Research assumptions are centralized rather than scattered throughout the source code.
+
+Configuration includes:
+
+- Target company
+- Peer companies
 - Tax rate
 - Risk-free rate
 - Equity risk premium
-- Cost of debt
+- Pre-tax cost of debt
 - Forecast horizon
 - FCF conversion
-- Bear-case assumptions
-- Base-case assumptions
-- Bull-case assumptions
+- Bear assumptions
+- Base assumptions
+- Bull assumptions
 
-This makes the model easier to audit and reproduce.
+This makes the research workflow easier to reproduce and modify.
 
-## Data Quality
+---
 
-The project includes controls for:
+## Running the Project
 
-- Required columns
-- Missing observations
-- Duplicate rows
-- Numeric conversion
-- Positive-value validation
-- Configuration validation
-- Duplicate configuration parameters
+Install dependencies:
 
-The objective is to prevent avoidable data-quality problems from propagating into valuation outputs.
+`pip install -r requirements.txt`
 
-## Research Reporting
+Run the complete research pipeline:
 
-The reporting layer supports:
+`python run_research.py`
 
-- Company snapshots
-- Peer comparison tables
-- Valuation summaries
-- Research tables
-- CSV exports
-- Revenue and EBITDA charts
-- DCF sensitivity visualizations
+The pipeline retrieves current market and financial information and generates structured outputs under:
+
+`data/processed/`
+
+---
+
+## Generated Outputs
+
+The research pipeline can generate:
+
+- `target_financials.csv`
+- `market_snapshot.csv`
+- `market_metrics.csv`
+- `scenario_valuations.csv`
+- `peer_market_data.csv`
+- `peer_market_metrics.csv`
+- `peer_multiples.csv`
+- `peer_median_multiples.csv`
+- `peer_comparison.csv`
+- `peer_valuation.csv`
+- `valuation_summary.csv`
+- `investment_summary.csv`
+- `research_snapshot.csv`
+
+Generated market data and processed outputs are excluded from Git tracking.
+
+---
 
 ## Testing
 
-The repository contains unit tests covering:
+The project uses `pytest`.
 
-- Financial analysis
-- Financial statements
-- Financial data
-- Data quality
-- Configuration
-- Forecasting
+Run:
+
+`pytest`
+
+The test suite covers key components including:
+
+- Financial statement normalization
+- Free cash flow calculation
+- Financial validation
 - DCF valuation
-- Capital cost
-- Comparable-company analysis
+- Equity valuation
 - Peer valuation
-- Scenario valuation
-- Forecast sensitivity
-- Research metrics
-- Screening
-- Investment scoring
-- Investment decision logic
-- Research reporting
-- Valuation summaries
-- Research engine orchestration
+- Comparable-company multiples
+- Scenario calculations
+- Research output generation
+- Research configuration
 
-GitHub Actions is configured to run the test suite automatically for pushes and pull requests targeting `main`.
+Continuous integration is configured through:
 
-## Technology
+`.github/workflows/tests.yml`
 
-- Python
-- pandas
-- NumPy
-- SciPy
-- scikit-learn
-- Matplotlib
-- yfinance
-- openpyxl
-- pytest
-- GitHub Actions
+---
 
 ## Project Structure
 
-The repository is organized into:
+    equity-research-platform/
+    │
+    ├── .github/
+    │   └── workflows/
+    │       └── tests.yml
+    │
+    ├── data/
+    │   ├── processed/
+    │   ├── research_config.csv
+    │   └── research_universe.csv
+    │
+    ├── figures/
+    │
+    ├── notebooks/
+    │   └── 01_empirical_research.py
+    │
+    ├── src/
+    │   ├── assumptions.py
+    │   ├── capital_cost.py
+    │   ├── comparables.py
+    │   ├── config.py
+    │   ├── data_loader.py
+    │   ├── data_processing.py
+    │   ├── data_quality.py
+    │   ├── dcf_model.py
+    │   ├── empirical_pipeline.py
+    │   ├── financial_analysis.py
+    │   ├── financial_data.py
+    │   ├── financial_statements.py
+    │   ├── forecasting.py
+    │   ├── forecast_sensitivity.py
+    │   ├── investment_decision.py
+    │   ├── investment_thesis.py
+    │   ├── market_data.py
+    │   ├── peer_valuation.py
+    │   ├── pipeline.py
+    │   ├── reporting.py
+    │   ├── research_engine.py
+    │   ├── research_metrics.py
+    │   ├── research_outputs.py
+    │   ├── research_report.py
+    │   ├── scenario_valuation.py
+    │   ├── scenarios.py
+    │   ├── screening.py
+    │   └── valuation.py
+    │
+    ├── tests/
+    │   ├── test_empirical_pipeline.py
+    │   ├── test_financial_statements.py
+    │   ├── test_peer_valuation.py
+    │   ├── test_research_outputs.py
+    │   ├── test_scenarios.py
+    │   └── test_valuation.py
+    │
+    ├── .gitignore
+    ├── LICENSE
+    ├── PROJECT.md
+    ├── README.md
+    ├── RESULTS.md
+    ├── pytest.ini
+    ├── requirements.txt
+    └── run_research.py
 
-- `data/` — research universe and modelling configuration
-- `figures/` — generated research visualizations
-- `notebooks/` — research notebooks
-- `src/` — analytical and valuation modules
-- `tests/` — automated unit tests
-- `.github/workflows/` — continuous integration
+---
 
-Key modules include:
+## Data and Research Integrity
 
-- `config.py`
-- `data_loader.py`
-- `data_processing.py`
-- `data_quality.py`
-- `financial_data.py`
-- `financial_analysis.py`
-- `financial_statements.py`
-- `market_data.py`
-- `research_metrics.py`
-- `forecasting.py`
-- `capital_cost.py`
-- `valuation.py`
-- `dcf_model.py`
-- `comparables.py`
-- `peer_valuation.py`
-- `scenarios.py`
-- `scenario_valuation.py`
-- `forecast_sensitivity.py`
-- `screening.py`
-- `investment_thesis.py`
-- `investment_decision.py`
-- `research_report.py`
-- `valuation_summary.py`
-- `reporting.py`
-- `pipeline.py`
-- `research_engine.py`
+The project retrieves financial and market information dynamically.
 
-## Reproducibility
+Therefore, valuation outputs can change depending on:
 
-The project separates:
+- Market prices
+- Financial-statement updates
+- Data availability
+- Accounting classifications
+- Peer selection
+- Forecast assumptions
+- WACC
+- Terminal growth
 
-- Retrieved financial data
-- Processed financial data
-- Research configuration
-- Analyst assumptions
-- Forecast values
-- Valuation calculations
-- Investment conclusions
+No numerical research findings are manually fabricated in the repository.
 
-This makes the analytical chain easier to inspect and reproduce.
+Any numerical result used in an application, presentation, or research discussion should be generated from an actual execution of the pipeline and checked against the underlying data.
 
-## Research Integrity
-
-The project maintains a distinction between:
-
-### Historical observations
-
-Data retrieved from financial and market-data sources.
-
-### Derived metrics
-
-Metrics calculated from historical observations.
-
-### Analyst assumptions
-
-Explicit modelling parameters.
-
-### Forecasts
-
-Values generated from analyst assumptions.
-
-### Valuation outputs
-
-Values generated by valuation models.
-
-### Investment assessment
-
-Interpretation of the resulting evidence.
-
-The repository does not present unexecuted analytical outputs as empirical findings.
-
-## Portfolio Context
-
-This project forms part of a broader finance and quantitative-finance portfolio.
-
-It demonstrates:
-
-- Equity research
-- Financial statement analysis
-- Financial modelling
-- DCF valuation
-- Comparable-company valuation
-- Fundamental screening
-- Scenario analysis
-- Sensitivity analysis
-- Python financial analytics
-- Data-quality controls
-- Automated testing
-- Research workflow architecture
-
-## Intended Applications
-
-The framework is relevant to:
-
-- Equity research
-- Investment analysis
-- Asset management
-- Hedge funds
-- Private equity
-- Investment banking
-- Financial modelling
-- Quantitative finance
-- Financial data analytics
+---
 
 ## Limitations
 
-This project is intended for educational and research purposes.
+The platform is a research and modelling framework rather than a production investment system.
 
 Important limitations include:
 
-- Public-data availability
-- Financial-statement classification differences
-- Data-provider limitations
-- Forecast uncertainty
-- WACC estimation uncertainty
-- Terminal-value sensitivity
-- Peer-selection bias
+- External data-source limitations
+- Missing financial observations
+- Accounting-definition differences
+- Simplified forecasting assumptions
+- Peer-selection effects
+- DCF sensitivity to WACC and terminal growth
 - Market-price volatility
-- Model specification risk
-- Assumption uncertainty
+- Simplified investment scoring
 
-The platform does not constitute investment advice.
+The resulting valuation should therefore be interpreted as a model estimate rather than an objective measure of fair value.
+
+---
+
+## Academic and Professional Relevance
+
+This project demonstrates applied skills in:
+
+- Corporate finance
+- Equity research
+- Financial statement analysis
+- Financial modelling
+- Valuation
+- Quantitative finance
+- Investment analysis
+- Financial data analysis
+- Python
+- Pandas
+- NumPy
+- Statistical reasoning
+- Financial data engineering
+- Research reproducibility
+
+Relevant areas include:
+
+- Equity Research
+- Investment Banking
+- Private Equity
+- Hedge Funds
+- Asset Management
+- Quantitative Finance
+- Financial Risk Management
+- Financial Data Analytics
+
+---
+
+## Relationship to the Broader Portfolio
+
+This project is designed as a company-level investment-analysis project.
+
+It complements projects covering:
+
+- Investment banking and M&A
+- Portfolio optimization
+- Credit risk
+- Banking customer analytics
+- Financial data warehousing
+
+It also complements a separate empirical finance research project focused on portfolio construction and risk-adjusted performance rather than duplicating that research.
+
+---
 
 ## Author
 
@@ -549,14 +514,16 @@ The platform does not constitute investment advice.
 
 BSc Electrical Engineering
 
-Areas of interest:
+Finance | Quantitative Finance | Risk Analytics | Financial Data
 
-- Quantitative Finance
-- Investment Analysis
-- Financial Risk Management
-- Banking
-- Financial Modelling
-- Investment Banking
-- Private Equity
-- Hedge Funds
-- Financial Data Analytics
+GitHub:
+
+https://github.com/sahandmostafaei
+
+---
+
+## Disclaimer
+
+This repository is intended for educational, research, and portfolio purposes only.
+
+It does not constitute investment advice, an offer, or a recommendation to buy or sell any security.
