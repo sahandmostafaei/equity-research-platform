@@ -48,9 +48,33 @@ investment_thesis
 valuation_summary
     Cross-method valuation comparison.
 
+research_metrics
+    Market and valuation metrics.
+
+market_data
+    Current market information.
+
+data_quality
+    Financial data validation.
+
+assumptions
+    Explicit valuation assumptions.
+
+research_report
+    Research tables and reporting utilities.
+
+investment_decision
+    Investment classification framework.
+
+forecast_sensitivity
+    Forecast-driven valuation sensitivity analysis.
+
 reporting
     Research tables and visualization utilities.
 
 pipeline
-    High-level research workflow.
+    Price and return workflow.
+
+research_engine
+    High-level equity research workflow orchestration.
 """
