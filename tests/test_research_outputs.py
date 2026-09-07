@@ -47,10 +47,12 @@ def test_save_investment_summary(tmp_path):
 def test_research_snapshot():
     class MockResult:
         target_ticker = "MSFT"
+
         peer_financials = {
             "GOOGL": pd.DataFrame(),
             "META": pd.DataFrame(),
         }
+
         valuation_summary = pd.DataFrame(
             {
                 "method": [
@@ -59,13 +61,20 @@ def test_research_snapshot():
                 ]
             }
         )
+
         estimated_wacc = 0.08
+
         investment_summary = {
             "market_price": 100.0,
             "consensus_value": 120.0,
             "valuation_upside": 0.20,
-            "score": 0.80,
-            "score_classification": "Strong",
+            "fundamental_score": 0.80,
+            "valuation_classification": (
+                "Undervalued"
+            ),
+            "investment_view": (
+                "Strong Buy Candidate"
+            ),
         }
 
     snapshot = build_research_snapshot(
@@ -91,4 +100,25 @@ def test_research_snapshot():
             "valuation_method_count"
         ]
         == 2
+    )
+
+    assert (
+        snapshot.iloc[0][
+            "investment_score"
+        ]
+        == 0.80
+    )
+
+    assert (
+        snapshot.iloc[0][
+            "valuation_classification"
+        ]
+        == "Undervalued"
+    )
+
+    assert (
+        snapshot.iloc[0][
+            "investment_view"
+        ]
+        == "Strong Buy Candidate"
     )
