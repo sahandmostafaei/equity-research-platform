@@ -3,53 +3,60 @@ import pytest
 from src.valuation import (
     calculate_dcf_value,
     calculate_equity_value,
+    calculate_margin_of_safety,
     calculate_per_share_value,
     calculate_upside,
 )
 
 
-def test_dcf_value_is_positive():
+def test_dcf_requires_valid_wacc_spread():
+    with pytest.raises(ValueError):
+        calculate_dcf_value(
+            free_cash_flows=[100.0, 110.0],
+            wacc=0.08,
+            terminal_growth=0.08,
+        )
+
+
+def test_dcf_returns_positive_value():
     value = calculate_dcf_value(
         free_cash_flows=[
             100.0,
             110.0,
-            121.0,
-            133.1,
-            146.41,
+            120.0,
         ],
-        wacc=0.09,
-        terminal_growth=0.025,
+        wacc=0.10,
+        terminal_growth=0.02,
     )
 
     assert value > 0
 
 
-def test_dcf_rejects_invalid_discount_rate():
-    with pytest.raises(ValueError):
-        calculate_dcf_value(
-            free_cash_flows=[100.0],
-            wacc=0.02,
-            terminal_growth=0.03,
-        )
-
-
-def test_equity_value():
+def test_equity_value_bridge():
     result = calculate_equity_value(
         enterprise_value=1000.0,
-        total_debt=200.0,
+        total_debt=250.0,
         cash=100.0,
     )
 
-    assert result == 900.0
+    assert result == 850.0
 
 
 def test_per_share_value():
     result = calculate_per_share_value(
-        equity_value=900.0,
+        equity_value=1000.0,
         shares_outstanding=100.0,
     )
 
-    assert result == 9.0
+    assert result == 10.0
+
+
+def test_per_share_requires_positive_shares():
+    with pytest.raises(ValueError):
+        calculate_per_share_value(
+            equity_value=1000.0,
+            shares_outstanding=0.0,
+        )
 
 
 def test_upside():
@@ -59,3 +66,12 @@ def test_upside():
     )
 
     assert result == pytest.approx(0.20)
+
+
+def test_margin_of_safety():
+    result = calculate_margin_of_safety(
+        intrinsic_value=120.0,
+        market_price=90.0,
+    )
+
+    assert result == pytest.approx(0.25)
