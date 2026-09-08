@@ -1,21 +1,24 @@
-from __future__ import annotations
-
 from pathlib import Path
-
-import pandas as pd
 
 from src.analytical_summary import (
     build_research_dashboard,
     save_research_dashboard,
 )
-from src.investment_thesis import build_thesis
-from src.research_engine import create_default_research_engine
-from src.research_outputs import save_research_outputs
+from src.investment_thesis import (
+    build_thesis,
+)
+from src.research_engine import (
+    EquityResearchEngine,
+)
+from src.research_outputs import (
+    save_research_outputs,
+)
 from src.research_quality import (
-    quality_checks_pass,
     run_research_quality_checks,
+    quality_checks_pass,
 )
 from src.reporting import (
+    build_research_report,
     plot_peer_multiples,
     plot_revenue_and_ebitda,
     plot_scenario_valuation,
@@ -24,39 +27,12 @@ from src.reporting import (
 )
 
 
-ROOT_DIR = Path(__file__).resolve().parent
-
-OUTPUT_DIR = (
-    ROOT_DIR
-    / "data"
-    / "processed"
-)
-
-FIGURES_DIR = (
-    ROOT_DIR
-    / "figures"
-)
+PROJECT_ROOT = Path(__file__).resolve().parent
+OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"
+FIGURES_DIR = PROJECT_ROOT / "figures"
 
 
 def main() -> None:
-    """
-    Run the complete equity research workflow.
-
-    Workflow:
-    1. Load research configuration.
-    2. Download target and peer financial data.
-    3. Calculate fundamental and market metrics.
-    4. Estimate WACC.
-    5. Run scenario valuation.
-    6. Run peer valuation.
-    7. Build investment assessment.
-    8. Build analytical dashboard.
-    9. Build structured investment thesis.
-    10. Generate research report and figures.
-    11. Run data-quality checks.
-    12. Save all outputs.
-    """
-
     OUTPUT_DIR.mkdir(
         parents=True,
         exist_ok=True,
@@ -67,212 +43,118 @@ def main() -> None:
         exist_ok=True,
     )
 
-    print(
-        "Starting equity research workflow..."
-    )
-
-    # ---------------------------------------------------------
-    # 1. Create research engine
-    # ---------------------------------------------------------
-
-    engine = (
-        create_default_research_engine()
-    )
-
-    print(
-        f"Target company: "
-        f"{engine.config.target_ticker}"
-    )
-
-    print(
-        "Peer companies: "
-        + ", ".join(
-            engine.config.peer_tickers
-        )
-    )
-
-    # ---------------------------------------------------------
-    # 2. Run integrated research engine
-    # ---------------------------------------------------------
+    engine = EquityResearchEngine()
 
     result = engine.run()
 
-    print(
-        "Research engine completed."
-    )
-
-    # ---------------------------------------------------------
-    # 3. Save core analytical outputs
-    # ---------------------------------------------------------
-
-    output_paths = save_research_outputs(
+    save_research_outputs(
         result,
         OUTPUT_DIR,
     )
 
-    print(
-        f"Saved {len(output_paths)} "
-        "core analytical outputs."
+    dashboard = build_research_dashboard(
+        result
     )
 
-    # ---------------------------------------------------------
-    # 4. Build analytical dashboard
-    # ---------------------------------------------------------
+    save_research_dashboard(
+        dashboard,
+        OUTPUT_DIR,
+    )
 
-    dashboard = (
-        build_research_dashboard(
-            result
+    latest_financials = (
+        result.historical_financials.iloc[-1]
+    )
+
+    roic = float(
+        latest_financials.get(
+            "roic",
+            0.0,
         )
     )
 
-    dashboard_paths = (
-        save_research_dashboard(
-            dashboard,
-            OUTPUT_DIR,
+    revenue_growth = float(
+        latest_financials.get(
+            "revenue_growth",
+            0.0,
         )
     )
 
-    print(
-        f"Saved {len(dashboard_paths)} "
-        "dashboard outputs."
+    free_cash_flow = float(
+        latest_financials.get(
+            "free_cash_flow",
+            0.0,
+        )
     )
 
-    # ---------------------------------------------------------
-    # 5. Extract investment assessment
-    # ---------------------------------------------------------
+    revenue = float(
+        latest_financials.get(
+            "revenue",
+            0.0,
+        )
+    )
 
-    investment_summary = (
-        result.investment_summary
+    fcf_margin = (
+        free_cash_flow / revenue
+        if revenue != 0
+        else 0.0
+    )
+
+    net_debt_to_ebitda = float(
+        latest_financials.get(
+            "net_debt_to_ebitda",
+            0.0,
+        )
     )
 
     valuation_upside = float(
-        investment_summary.get(
+        result.investment_summary.get(
             "valuation_upside",
             0.0,
         )
     )
 
     fundamental_score = float(
-        investment_summary.get(
+        result.investment_summary.get(
             "fundamental_score",
             0.0,
         )
     )
 
-    # ---------------------------------------------------------
-    # 6. Build catalysts and risks
-    # ---------------------------------------------------------
-
     catalysts = [
-        (
-            "Revenue growth and operating "
-            "margin expansion can increase "
-            "intrinsic value."
-        ),
-        (
-            "Strong cash-flow generation can "
-            "support reinvestment and shareholder "
-            "returns."
-        ),
-        (
-            "Relative valuation versus selected "
-            "technology peers provides a market "
-            "reference point."
-        ),
+        "Revenue growth and operating performance",
+        "Margin expansion and cash-flow generation",
+        "Valuation relative to fundamental value",
     ]
 
     risks = [
-        (
-            "Valuation is sensitive to WACC, "
-            "terminal growth, and forecast "
-            "assumptions."
-        ),
-        (
-            "Peer multiples may be affected by "
-            "differences in growth, margins, "
-            "capital intensity, and risk."
-        ),
-        (
-            "Market data and financial-statement "
-            "inputs are sourced dynamically and "
-            "should be independently verified "
-            "before investment use."
-        ),
+        "Changes in revenue growth assumptions",
+        "Margin compression",
+        "Higher discount rates and valuation sensitivity",
+        "Competitive and macroeconomic risks",
     ]
 
-    # ---------------------------------------------------------
-    # 7. Determine company name
-    # ---------------------------------------------------------
-
-    company = result.market_data.get(
-        "company"
-    )
-
-    if not company:
-        company = result.target_ticker
-
-    company = str(company)
-
-    # ---------------------------------------------------------
-    # 8. Build structured investment thesis
-    # ---------------------------------------------------------
-
     thesis = build_thesis(
-        company=company,
+        company=result.target_ticker,
         valuation_upside=valuation_upside,
         fundamental_score=fundamental_score,
         catalysts=catalysts,
         risks=risks,
     )
 
-    thesis_path = (
-        OUTPUT_DIR
-        / "investment_thesis.csv"
-    )
-
     save_investment_thesis(
         thesis.to_dict(),
-        thesis_path,
+        OUTPUT_DIR / "investment_thesis.csv",
     )
 
-    print(
-        "Saved investment thesis."
-    )
-
-    # ---------------------------------------------------------
-    # 9. Generate research report
-    # ---------------------------------------------------------
-
-    report_path = (
-        OUTPUT_DIR
-        / "research_report.md"
+    report = build_research_report(
+        result=result,
+        dashboard=dashboard,
+        thesis=thesis.to_dict(),
     )
 
     save_research_report(
-        target_ticker=result.target_ticker,
-        investment_summary=(
-            result.investment_summary
-        ),
-        valuation_summary=(
-            result.valuation_summary
-        ),
-        output_path=report_path,
-        peer_comparison=(
-            result.peer_comparison
-        ),
-    )
-
-    print(
-        "Saved research report."
-    )
-
-    # ---------------------------------------------------------
-    # 10. Generate revenue / EBITDA figure
-    # ---------------------------------------------------------
-
-    revenue_ebitda_path = (
-        FIGURES_DIR
-        / "revenue_ebitda_history.png"
+        report,
+        OUTPUT_DIR / "research_report.md",
     )
 
     plot_revenue_and_ebitda(
@@ -282,131 +164,60 @@ def main() -> None:
         result.historical_financials[
             "ebitda"
         ],
-        revenue_ebitda_path,
-    )
-
-    print(
-        "Saved revenue and EBITDA figure."
-    )
-
-    # ---------------------------------------------------------
-    # 11. Generate peer multiples figure
-    # ---------------------------------------------------------
-
-    peer_multiples_path = (
-        FIGURES_DIR
-        / "peer_multiples.png"
+        FIGURES_DIR / "revenue_ebitda_history.png",
     )
 
     plot_peer_multiples(
         result.peer_multiples,
-        peer_multiples_path,
-    )
-
-    print(
-        "Saved peer multiples figure."
-    )
-
-    # ---------------------------------------------------------
-    # 12. Generate scenario valuation figure
-    # ---------------------------------------------------------
-
-    scenario_valuation_path = (
-        FIGURES_DIR
-        / "scenario_valuation.png"
+        FIGURES_DIR / "peer_multiples.png",
     )
 
     plot_scenario_valuation(
         result.scenario_valuations,
-        scenario_valuation_path,
+        FIGURES_DIR / "scenario_valuation.png",
     )
-
-    print(
-        "Saved scenario valuation figure."
-    )
-
-    # ---------------------------------------------------------
-    # 13. Run research-quality checks
-    # ---------------------------------------------------------
 
     quality_checks = (
         run_research_quality_checks(
-            result
+            historical_financials=(
+                result.historical_financials
+            ),
+            scenario_valuations=(
+                result.scenario_valuations
+            ),
+            peer_multiples=(
+                result.peer_multiples
+            ),
+            valuation_summary=(
+                result.valuation_summary
+            ),
         )
     )
-
-    quality_path = (
-        OUTPUT_DIR
-        / "research_quality_checks.csv"
-    )
-
-    quality_checks.to_csv(
-        quality_path,
-        index=False,
-    )
-
-    print(
-        "Saved research-quality checks."
-    )
-
-    # ---------------------------------------------------------
-    # 14. Stop if quality checks fail
-    # ---------------------------------------------------------
 
     if not quality_checks_pass(
         quality_checks
     ):
-        print(
-            "Research-quality checks failed."
-        )
+        failed_checks = [
+            check.name
+            for check in quality_checks
+            if not check.passed
+        ]
+
         raise RuntimeError(
-            "Research-quality checks failed. "
-            "Review data/processed/"
-            "research_quality_checks.csv."
+            "Research quality checks failed: "
+            + ", ".join(failed_checks)
         )
 
+    summary = result.investment_summary
+
     print(
-        "Research-quality checks passed."
-    )
-
-    # ---------------------------------------------------------
-    # 15. Final summary
-    # ---------------------------------------------------------
-
-    market_price = investment_summary.get(
-        "market_price"
-    )
-
-    median_valuation = investment_summary.get(
-        "consensus_value"
-    )
-
-    valuation_classification = (
-        investment_summary.get(
-            "valuation_classification"
-        )
-    )
-
-    investment_view = (
-        investment_summary.get(
-            "investment_view"
-        )
-    )
-
-    print()
-    print(
-        "========================================"
-    )
-    print(
-        "EQUITY RESEARCH SUMMARY"
-    )
-    print(
-        "========================================"
+        "\n"
+        "Equity Research Platform\n"
+        "========================\n"
     )
 
     print(
-        f"Target: "
-        f"{result.target_ticker}"
+        f"Target: {result.target_ticker}"
     )
 
     print(
@@ -414,44 +225,67 @@ def main() -> None:
         f"{result.estimated_wacc:.2%}"
     )
 
-    if market_price is not None:
-        print(
-            f"Market price: "
-            f"{float(market_price):.2f}"
-        )
-
-    if median_valuation is not None:
-        print(
-            "Median valuation reference: "
-            f"{float(median_valuation):.2f}"
-        )
-
     print(
-        f"Valuation upside: "
-        f"{valuation_upside:.2%}"
+        f"Market Price: "
+        f"{summary.get('market_price', float('nan')):.2f}"
     )
 
     print(
-        f"Fundamental score: "
-        f"{fundamental_score:.2f}"
+        f"Median Valuation Reference: "
+        f"{summary.get('consensus_value', float('nan')):.2f}"
     )
 
     print(
-        f"Valuation classification: "
-        f"{valuation_classification}"
+        f"Valuation Upside: "
+        f"{summary.get('valuation_upside', float('nan')):.2%}"
     )
 
     print(
-        f"Investment view: "
-        f"{investment_view}"
+        f"Fundamental Score: "
+        f"{summary.get('fundamental_score', float('nan')):.2f}"
     )
 
     print(
-        "========================================"
+        f"Valuation Classification: "
+        f"{summary.get('valuation_classification', 'N/A')}"
     )
 
     print(
-        "Research workflow completed successfully."
+        f"Investment View: "
+        f"{summary.get('investment_view', 'N/A')}"
+    )
+
+    print(
+        "\nQuality Checks: PASSED"
+    )
+
+    print(
+        f"ROIC: {roic:.2%}"
+    )
+
+    print(
+        f"Revenue Growth: {revenue_growth:.2%}"
+    )
+
+    print(
+        f"FCF Margin: {fcf_margin:.2%}"
+    )
+
+    print(
+        f"Net Debt / EBITDA: "
+        f"{net_debt_to_ebitda:.2f}"
+    )
+
+    print(
+        "\nOutputs saved to:"
+    )
+
+    print(
+        f"  {OUTPUT_DIR}"
+    )
+
+    print(
+        f"  {FIGURES_DIR}"
     )
 
 
