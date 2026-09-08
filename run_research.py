@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
+
 from src.analytical_summary import (
     build_research_dashboard,
     save_research_dashboard,
@@ -22,105 +24,37 @@ from src.reporting import (
 )
 
 
-OUTPUT_DIR = Path("data/processed")
-FIGURES_DIR = Path("figures")
+ROOT_DIR = Path(__file__).resolve().parent
 
+OUTPUT_DIR = (
+    ROOT_DIR
+    / "data"
+    / "processed"
+)
 
-def build_catalysts(result) -> list[str]:
-    """
-    Build a concise list of potential investment catalysts.
-    """
-
-    catalysts: list[str] = []
-
-    valuation_upside = result.investment_summary.get(
-        "valuation_upside"
-    )
-
-    if (
-        valuation_upside is not None
-        and valuation_upside > 0
-    ):
-        catalysts.append(
-            "Potential valuation upside relative to "
-            "the current market price."
-        )
-
-    if not result.peer_comparison.empty:
-        catalysts.append(
-            "Relative valuation can be assessed against "
-            "a selected technology peer group."
-        )
-
-    if not result.scenario_valuations.empty:
-        catalysts.append(
-            "Bull-case operating assumptions provide "
-            "additional valuation upside if execution improves."
-        )
-
-    catalysts.append(
-        "Continued revenue growth and operating-margin "
-        "expansion could support intrinsic value."
-    )
-
-    return catalysts
-
-
-def build_risks(result) -> list[str]:
-    """
-    Build a concise list of principal investment risks.
-    """
-
-    risks: list[str] = []
-
-    risks.append(
-        "Valuation is sensitive to WACC and terminal-growth "
-        "assumptions."
-    )
-
-    risks.append(
-        "Forecast valuation depends on assumptions about "
-        "revenue growth, margins, and free-cash-flow conversion."
-    )
-
-    risks.append(
-        "Peer multiples can change materially with market "
-        "conditions and investor risk appetite."
-    )
-
-    estimated_wacc = result.estimated_wacc
-
-    if estimated_wacc is not None:
-        risks.append(
-            f"The estimated WACC of {estimated_wacc:.2%} "
-            "introduces sensitivity to the cost of capital."
-        )
-
-    risks.append(
-        "Market, competitive, regulatory, technological, "
-        "and execution risks may cause realized results "
-        "to differ from the research assumptions."
-    )
-
-    return risks
-
-
-def print_output_paths(
-    output_paths: dict,
-) -> None:
-    """
-    Print generated research output paths.
-    """
-
-    for name, path in output_paths.items():
-        print(
-            f"  Saved {name}: {path}"
-        )
+FIGURES_DIR = (
+    ROOT_DIR
+    / "figures"
+)
 
 
 def main() -> None:
     """
-    Execute the complete equity research workflow.
+    Run the complete equity research workflow.
+
+    Workflow:
+    1. Load research configuration.
+    2. Download target and peer financial data.
+    3. Calculate fundamental and market metrics.
+    4. Estimate WACC.
+    5. Run scenario valuation.
+    6. Run peer valuation.
+    7. Build investment assessment.
+    8. Build analytical dashboard.
+    9. Build structured investment thesis.
+    10. Generate research report and figures.
+    11. Run data-quality checks.
+    12. Save all outputs.
     """
 
     OUTPUT_DIR.mkdir(
@@ -133,195 +67,267 @@ def main() -> None:
         exist_ok=True,
     )
 
-    print("=" * 72)
     print(
-        "EQUITY RESEARCH & FUNDAMENTAL VALUATION PLATFORM"
-    )
-    print("=" * 72)
-
-    # ------------------------------------------------------------------
-    # 1. Initialize research engine
-    # ------------------------------------------------------------------
-
-    print(
-        "\n[1/9] Initializing research engine..."
+        "Starting equity research workflow..."
     )
 
-    engine = create_default_research_engine()
+    # ---------------------------------------------------------
+    # 1. Create research engine
+    # ---------------------------------------------------------
 
-    print(
-        f"Target: {engine.config.target_ticker}"
+    engine = (
+        create_default_research_engine()
     )
 
     print(
-        "Peers: "
+        f"Target company: "
+        f"{engine.config.target_ticker}"
+    )
+
+    print(
+        "Peer companies: "
         + ", ".join(
             engine.config.peer_tickers
         )
     )
 
-    # ------------------------------------------------------------------
-    # 2. Run complete research pipeline
-    # ------------------------------------------------------------------
-
-    print(
-        "\n[2/9] Running fundamental and valuation analysis..."
-    )
+    # ---------------------------------------------------------
+    # 2. Run integrated research engine
+    # ---------------------------------------------------------
 
     result = engine.run()
 
     print(
-        f"Research completed for "
-        f"{result.target_ticker}."
+        "Research engine completed."
     )
 
-    # ------------------------------------------------------------------
-    # 3. Save core research outputs
-    # ------------------------------------------------------------------
-
-    print(
-        "\n[3/9] Saving research outputs..."
-    )
+    # ---------------------------------------------------------
+    # 3. Save core analytical outputs
+    # ---------------------------------------------------------
 
     output_paths = save_research_outputs(
         result,
         OUTPUT_DIR,
     )
 
-    print_output_paths(
-        output_paths
-    )
-
-    # ------------------------------------------------------------------
-    # 4. Build analytical research dashboard
-    # ------------------------------------------------------------------
-
     print(
-        "\n[4/9] Building analytical research dashboard..."
+        f"Saved {len(output_paths)} "
+        "core analytical outputs."
     )
 
-    dashboard = build_research_dashboard(
-        result
-    )
+    # ---------------------------------------------------------
+    # 4. Build analytical dashboard
+    # ---------------------------------------------------------
 
-    dashboard_paths = save_research_dashboard(
-        dashboard,
-        OUTPUT_DIR,
-    )
-
-    for name, path in dashboard_paths.items():
-        print(
-            f"  Saved dashboard output: "
-            f"{name} -> {path}"
+    dashboard = (
+        build_research_dashboard(
+            result
         )
+    )
 
-    # ------------------------------------------------------------------
-    # 5. Build investment thesis
-    # ------------------------------------------------------------------
+    dashboard_paths = (
+        save_research_dashboard(
+            dashboard,
+            OUTPUT_DIR,
+        )
+    )
 
     print(
-        "\n[5/9] Building investment thesis..."
+        f"Saved {len(dashboard_paths)} "
+        "dashboard outputs."
     )
 
-    catalysts = build_catalysts(
-        result
+    # ---------------------------------------------------------
+    # 5. Extract investment assessment
+    # ---------------------------------------------------------
+
+    investment_summary = (
+        result.investment_summary
     )
 
-    risks = build_risks(
-        result
+    valuation_upside = float(
+        investment_summary.get(
+            "valuation_upside",
+            0.0,
+        )
     )
+
+    fundamental_score = float(
+        investment_summary.get(
+            "fundamental_score",
+            0.0,
+        )
+    )
+
+    # ---------------------------------------------------------
+    # 6. Build catalysts and risks
+    # ---------------------------------------------------------
+
+    catalysts = [
+        (
+            "Revenue growth and operating "
+            "margin expansion can increase "
+            "intrinsic value."
+        ),
+        (
+            "Strong cash-flow generation can "
+            "support reinvestment and shareholder "
+            "returns."
+        ),
+        (
+            "Relative valuation versus selected "
+            "technology peers provides a market "
+            "reference point."
+        ),
+    ]
+
+    risks = [
+        (
+            "Valuation is sensitive to WACC, "
+            "terminal growth, and forecast "
+            "assumptions."
+        ),
+        (
+            "Peer multiples may be affected by "
+            "differences in growth, margins, "
+            "capital intensity, and risk."
+        ),
+        (
+            "Market data and financial-statement "
+            "inputs are sourced dynamically and "
+            "should be independently verified "
+            "before investment use."
+        ),
+    ]
+
+    # ---------------------------------------------------------
+    # 7. Determine company name
+    # ---------------------------------------------------------
+
+    company = result.market_data.get(
+        "company"
+    )
+
+    if not company:
+        company = result.target_ticker
+
+    company = str(company)
+
+    # ---------------------------------------------------------
+    # 8. Build structured investment thesis
+    # ---------------------------------------------------------
 
     thesis = build_thesis(
-        result=result,
+        company=company,
+        valuation_upside=valuation_upside,
+        fundamental_score=fundamental_score,
         catalysts=catalysts,
         risks=risks,
     )
 
-    thesis_path = save_investment_thesis(
-        thesis,
-        OUTPUT_DIR,
+    thesis_path = (
+        OUTPUT_DIR
+        / "investment_thesis.csv"
+    )
+
+    save_investment_thesis(
+        thesis.to_dict(),
+        thesis_path,
     )
 
     print(
-        f"  Saved investment thesis: "
-        f"{thesis_path}"
+        "Saved investment thesis."
     )
 
-    # ------------------------------------------------------------------
-    # 6. Build research report and figures
-    # ------------------------------------------------------------------
+    # ---------------------------------------------------------
+    # 9. Generate research report
+    # ---------------------------------------------------------
+
+    report_path = (
+        OUTPUT_DIR
+        / "research_report.md"
+    )
+
+    save_research_report(
+        target_ticker=result.target_ticker,
+        investment_summary=(
+            result.investment_summary
+        ),
+        valuation_summary=(
+            result.valuation_summary
+        ),
+        output_path=report_path,
+        peer_comparison=(
+            result.peer_comparison
+        ),
+    )
 
     print(
-        "\n[6/9] Building research report and figures..."
+        "Saved research report."
     )
 
-    report_path = save_research_report(
-        result=result,
-        output_dir=OUTPUT_DIR,
-        catalysts=catalysts,
-        risks=risks,
+    # ---------------------------------------------------------
+    # 10. Generate revenue / EBITDA figure
+    # ---------------------------------------------------------
+
+    revenue_ebitda_path = (
+        FIGURES_DIR
+        / "revenue_ebitda_history.png"
+    )
+
+    plot_revenue_and_ebitda(
+        result.historical_financials[
+            "revenue"
+        ],
+        result.historical_financials[
+            "ebitda"
+        ],
+        revenue_ebitda_path,
     )
 
     print(
-        f"  Saved research report: "
-        f"{report_path}"
+        "Saved revenue and EBITDA figure."
     )
 
-    if not result.historical_financials.empty:
-        revenue_ebitda_path = (
-            FIGURES_DIR
-            / "historical_revenue_ebitda.png"
-        )
+    # ---------------------------------------------------------
+    # 11. Generate peer multiples figure
+    # ---------------------------------------------------------
 
-        plot_revenue_and_ebitda(
-            result.historical_financials,
-            revenue_ebitda_path,
-        )
+    peer_multiples_path = (
+        FIGURES_DIR
+        / "peer_multiples.png"
+    )
 
-        print(
-            f"  Saved: "
-            f"{revenue_ebitda_path}"
-        )
-
-    if not result.peer_multiples.empty:
-        peer_multiples_path = (
-            FIGURES_DIR
-            / "peer_valuation_multiples.png"
-        )
-
-        plot_peer_multiples(
-            result.peer_multiples,
-            peer_multiples_path,
-        )
-
-        print(
-            f"  Saved: "
-            f"{peer_multiples_path}"
-        )
-
-    if not result.scenario_valuations.empty:
-        scenario_path = (
-            FIGURES_DIR
-            / "scenario_valuation.png"
-        )
-
-        plot_scenario_valuation(
-            result.scenario_valuations,
-            scenario_path,
-        )
-
-        print(
-            f"  Saved: "
-            f"{scenario_path}"
-        )
-
-    # ------------------------------------------------------------------
-    # 7. Run research-quality validation
-    # ------------------------------------------------------------------
+    plot_peer_multiples(
+        result.peer_multiples,
+        peer_multiples_path,
+    )
 
     print(
-        "\n[7/9] Running research-quality checks..."
+        "Saved peer multiples figure."
     )
+
+    # ---------------------------------------------------------
+    # 12. Generate scenario valuation figure
+    # ---------------------------------------------------------
+
+    scenario_valuation_path = (
+        FIGURES_DIR
+        / "scenario_valuation.png"
+    )
+
+    plot_scenario_valuation(
+        result.scenario_valuations,
+        scenario_valuation_path,
+    )
+
+    print(
+        "Saved scenario valuation figure."
+    )
+
+    # ---------------------------------------------------------
+    # 13. Run research-quality checks
+    # ---------------------------------------------------------
 
     quality_checks = (
         run_research_quality_checks(
@@ -340,72 +346,39 @@ def main() -> None:
     )
 
     print(
-        f"  Saved quality checks: "
-        f"{quality_path}"
+        "Saved research-quality checks."
     )
+
+    # ---------------------------------------------------------
+    # 14. Stop if quality checks fail
+    # ---------------------------------------------------------
 
     if not quality_checks_pass(
         quality_checks
     ):
         print(
-            "\nResearch-quality validation failed."
+            "Research-quality checks failed."
         )
-
-        failed_checks = quality_checks[
-            quality_checks["passed"] == False
-        ]
-
-        for _, row in failed_checks.iterrows():
-            print(
-                f"  FAILED: "
-                f"{row.get('check', 'Unknown check')}"
-            )
-
-        raise ValueError(
+        raise RuntimeError(
             "Research-quality checks failed. "
-            "Review "
-            "data/processed/"
+            "Review data/processed/"
             "research_quality_checks.csv."
         )
 
     print(
-        "  All research-quality checks passed."
+        "Research-quality checks passed."
     )
 
-    # ------------------------------------------------------------------
-    # 8. Print investment conclusion
-    # ------------------------------------------------------------------
+    # ---------------------------------------------------------
+    # 15. Final summary
+    # ---------------------------------------------------------
 
-    print(
-        "\n[8/9] Investment conclusion..."
+    market_price = investment_summary.get(
+        "market_price"
     )
 
-    investment_summary = (
-        result.investment_summary
-    )
-
-    market_price = (
-        investment_summary.get(
-            "market_price"
-        )
-    )
-
-    consensus_value = (
-        investment_summary.get(
-            "consensus_value"
-        )
-    )
-
-    valuation_upside = (
-        investment_summary.get(
-            "valuation_upside"
-        )
-    )
-
-    fundamental_score = (
-        investment_summary.get(
-            "fundamental_score"
-        )
+    median_valuation = investment_summary.get(
+        "consensus_value"
     )
 
     valuation_classification = (
@@ -420,127 +393,65 @@ def main() -> None:
         )
     )
 
-    if result.estimated_wacc is not None:
-        print(
-            f"  Estimated WACC: "
-            f"{result.estimated_wacc:.2%}"
-        )
+    print()
+    print(
+        "========================================"
+    )
+    print(
+        "EQUITY RESEARCH SUMMARY"
+    )
+    print(
+        "========================================"
+    )
+
+    print(
+        f"Target: "
+        f"{result.target_ticker}"
+    )
+
+    print(
+        f"Estimated WACC: "
+        f"{result.estimated_wacc:.2%}"
+    )
 
     if market_price is not None:
         print(
-            f"  Market price: "
-            f"{market_price:.2f}"
+            f"Market price: "
+            f"{float(market_price):.2f}"
         )
 
-    if consensus_value is not None:
+    if median_valuation is not None:
         print(
-            f"  Median valuation reference: "
-            f"{consensus_value:.2f}"
+            "Median valuation reference: "
+            f"{float(median_valuation):.2f}"
         )
 
-    if valuation_upside is not None:
-        print(
-            f"  Valuation upside/downside: "
-            f"{valuation_upside:.2%}"
-        )
-
-    if fundamental_score is not None:
-        print(
-            f"  Fundamental score: "
-            f"{fundamental_score:.2%}"
-        )
-
-    if valuation_classification:
-        print(
-            f"  Valuation classification: "
-            f"{valuation_classification}"
-        )
-
-    if investment_view:
-        print(
-            f"  Investment view: "
-            f"{investment_view}"
-        )
-
-    # ------------------------------------------------------------------
-    # 9. Completion summary
-    # ------------------------------------------------------------------
-
     print(
-        "\n[9/9] Workflow complete."
+        f"Valuation upside: "
+        f"{valuation_upside:.2%}"
     )
 
     print(
-        "\nGenerated output directories:"
+        f"Fundamental score: "
+        f"{fundamental_score:.2f}"
     )
 
     print(
-        f"  Research outputs: "
-        f"{OUTPUT_DIR}"
+        f"Valuation classification: "
+        f"{valuation_classification}"
     )
 
     print(
-        f"  Figures: "
-        f"{FIGURES_DIR}"
+        f"Investment view: "
+        f"{investment_view}"
     )
 
     print(
-        "\nKey research files:"
-    )
-
-    key_files = [
-        "research_snapshot.csv",
-        "investment_summary.csv",
-        "valuation_summary.csv",
-        "scenario_valuations.csv",
-        "peer_multiples.csv",
-        "peer_comparison.csv",
-        "peer_valuation.csv",
-        "fundamental_kpis.csv",
-        "valuation_range.csv",
-        "scenario_summary.csv",
-        "peer_relative_summary.csv",
-        "investment_thesis.csv",
-        "research_report.md",
-        "research_quality_checks.csv",
-    ]
-
-    for filename in key_files:
-        path = OUTPUT_DIR / filename
-
-        if path.exists():
-            print(
-                f"  - {path}"
-            )
-
-    print(
-        "\nKey figures:"
-    )
-
-    figure_files = [
-        "historical_revenue_ebitda.png",
-        "peer_valuation_multiples.png",
-        "scenario_valuation.png",
-    ]
-
-    for filename in figure_files:
-        path = FIGURES_DIR / filename
-
-        if path.exists():
-            print(
-                f"  - {path}"
-            )
-
-    print(
-        "\n" + "=" * 72
+        "========================================"
     )
 
     print(
-        "RESEARCH WORKFLOW FINISHED SUCCESSFULLY"
-    )
-
-    print(
-        "=" * 72
+        "Research workflow completed successfully."
     )
 
 
