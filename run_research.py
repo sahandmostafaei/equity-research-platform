@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from src.analytical_summary import (
+    build_research_dashboard,
+    save_research_dashboard,
+)
 from src.investment_thesis import build_thesis
 from src.research_engine import create_default_research_engine
 from src.research_outputs import save_research_outputs
@@ -26,6 +30,7 @@ def build_catalysts(result) -> list[str]:
     """
     Build a concise list of potential investment catalysts.
     """
+
     catalysts: list[str] = []
 
     valuation_upside = result.investment_summary.get(
@@ -65,6 +70,7 @@ def build_risks(result) -> list[str]:
     """
     Build a concise list of principal investment risks.
     """
+
     risks: list[str] = []
 
     risks.append(
@@ -99,6 +105,19 @@ def build_risks(result) -> list[str]:
     return risks
 
 
+def print_output_paths(
+    output_paths: dict,
+) -> None:
+    """
+    Print generated research output paths.
+    """
+
+    for name, path in output_paths.items():
+        print(
+            f"  Saved {name}: {path}"
+        )
+
+
 def main() -> None:
     """
     Execute the complete equity research workflow.
@@ -115,14 +134,18 @@ def main() -> None:
     )
 
     print("=" * 72)
-    print("EQUITY RESEARCH & FUNDAMENTAL VALUATION PLATFORM")
+    print(
+        "EQUITY RESEARCH & FUNDAMENTAL VALUATION PLATFORM"
+    )
     print("=" * 72)
 
     # ------------------------------------------------------------------
-    # 1. Create the research engine
+    # 1. Initialize research engine
     # ------------------------------------------------------------------
 
-    print("\n[1/9] Initializing research engine...")
+    print(
+        "\n[1/9] Initializing research engine..."
+    )
 
     engine = create_default_research_engine()
 
@@ -132,14 +155,18 @@ def main() -> None:
 
     print(
         "Peers: "
-        + ", ".join(engine.config.peer_tickers)
+        + ", ".join(
+            engine.config.peer_tickers
+        )
     )
 
     # ------------------------------------------------------------------
-    # 2. Run the complete research pipeline
+    # 2. Run complete research pipeline
     # ------------------------------------------------------------------
 
-    print("\n[2/9] Running fundamental and valuation analysis...")
+    print(
+        "\n[2/9] Running fundamental and valuation analysis..."
+    )
 
     result = engine.run()
 
@@ -152,23 +179,49 @@ def main() -> None:
     # 3. Save core research outputs
     # ------------------------------------------------------------------
 
-    print("\n[3/9] Saving research outputs...")
+    print(
+        "\n[3/9] Saving research outputs..."
+    )
 
     output_paths = save_research_outputs(
         result,
         OUTPUT_DIR,
     )
 
-    for name, path in output_paths.items():
+    print_output_paths(
+        output_paths
+    )
+
+    # ------------------------------------------------------------------
+    # 4. Build analytical research dashboard
+    # ------------------------------------------------------------------
+
+    print(
+        "\n[4/9] Building analytical research dashboard..."
+    )
+
+    dashboard = build_research_dashboard(
+        result
+    )
+
+    dashboard_paths = save_research_dashboard(
+        dashboard,
+        OUTPUT_DIR,
+    )
+
+    for name, path in dashboard_paths.items():
         print(
-            f"  Saved {name}: {path}"
+            f"  Saved dashboard output: "
+            f"{name} -> {path}"
         )
 
     # ------------------------------------------------------------------
-    # 4. Build investment thesis
+    # 5. Build investment thesis
     # ------------------------------------------------------------------
 
-    print("\n[4/9] Building investment thesis...")
+    print(
+        "\n[5/9] Building investment thesis..."
+    )
 
     catalysts = build_catalysts(
         result
@@ -195,10 +248,12 @@ def main() -> None:
     )
 
     # ------------------------------------------------------------------
-    # 5. Build research report
+    # 6. Build research report and figures
     # ------------------------------------------------------------------
 
-    print("\n[5/9] Building research report...")
+    print(
+        "\n[6/9] Building research report and figures..."
+    )
 
     report_path = save_research_report(
         result=result,
@@ -212,12 +267,6 @@ def main() -> None:
         f"{report_path}"
     )
 
-    # ------------------------------------------------------------------
-    # 6. Generate analytical figures
-    # ------------------------------------------------------------------
-
-    print("\n[6/9] Generating analytical figures...")
-
     if not result.historical_financials.empty:
         revenue_ebitda_path = (
             FIGURES_DIR
@@ -230,7 +279,8 @@ def main() -> None:
         )
 
         print(
-            f"  Saved: {revenue_ebitda_path}"
+            f"  Saved: "
+            f"{revenue_ebitda_path}"
         )
 
     if not result.peer_multiples.empty:
@@ -245,7 +295,8 @@ def main() -> None:
         )
 
         print(
-            f"  Saved: {peer_multiples_path}"
+            f"  Saved: "
+            f"{peer_multiples_path}"
         )
 
     if not result.scenario_valuations.empty:
@@ -260,14 +311,17 @@ def main() -> None:
         )
 
         print(
-            f"  Saved: {scenario_path}"
+            f"  Saved: "
+            f"{scenario_path}"
         )
 
     # ------------------------------------------------------------------
     # 7. Run research-quality validation
     # ------------------------------------------------------------------
 
-    print("\n[7/9] Running research-quality checks...")
+    print(
+        "\n[7/9] Running research-quality checks..."
+    )
 
     quality_checks = (
         run_research_quality_checks(
@@ -290,11 +344,9 @@ def main() -> None:
         f"{quality_path}"
     )
 
-    quality_passed = quality_checks_pass(
+    if not quality_checks_pass(
         quality_checks
-    )
-
-    if not quality_passed:
+    ):
         print(
             "\nResearch-quality validation failed."
         )
@@ -311,7 +363,8 @@ def main() -> None:
 
         raise ValueError(
             "Research-quality checks failed. "
-            "Review data/processed/"
+            "Review "
+            "data/processed/"
             "research_quality_checks.csv."
         )
 
@@ -323,26 +376,36 @@ def main() -> None:
     # 8. Print investment conclusion
     # ------------------------------------------------------------------
 
-    print("\n[8/9] Investment conclusion...")
+    print(
+        "\n[8/9] Investment conclusion..."
+    )
 
     investment_summary = (
         result.investment_summary
     )
 
-    market_price = investment_summary.get(
-        "market_price"
+    market_price = (
+        investment_summary.get(
+            "market_price"
+        )
     )
 
-    consensus_value = investment_summary.get(
-        "consensus_value"
+    consensus_value = (
+        investment_summary.get(
+            "consensus_value"
+        )
     )
 
-    valuation_upside = investment_summary.get(
-        "valuation_upside"
+    valuation_upside = (
+        investment_summary.get(
+            "valuation_upside"
+        )
     )
 
-    fundamental_score = investment_summary.get(
-        "fundamental_score"
+    fundamental_score = (
+        investment_summary.get(
+            "fundamental_score"
+        )
     )
 
     valuation_classification = (
@@ -403,53 +466,82 @@ def main() -> None:
     # 9. Completion summary
     # ------------------------------------------------------------------
 
-    print("\n[9/9] Workflow complete.")
+    print(
+        "\n[9/9] Workflow complete."
+    )
 
-    print("\nGenerated outputs:")
+    print(
+        "\nGenerated output directories:"
+    )
+
     print(
         f"  Research outputs: "
         f"{OUTPUT_DIR}"
     )
+
     print(
         f"  Figures: "
         f"{FIGURES_DIR}"
     )
 
-    print("\nKey files:")
     print(
-        f"  - {OUTPUT_DIR / 'research_snapshot.csv'}"
-    )
-    print(
-        f"  - {OUTPUT_DIR / 'investment_summary.csv'}"
-    )
-    print(
-        f"  - {OUTPUT_DIR / 'valuation_summary.csv'}"
-    )
-    print(
-        f"  - {OUTPUT_DIR / 'scenario_valuations.csv'}"
-    )
-    print(
-        f"  - {OUTPUT_DIR / 'peer_multiples.csv'}"
-    )
-    print(
-        f"  - {OUTPUT_DIR / 'peer_comparison.csv'}"
-    )
-    print(
-        f"  - {OUTPUT_DIR / 'peer_valuation.csv'}"
-    )
-    print(
-        f"  - {OUTPUT_DIR / 'investment_thesis.csv'}"
-    )
-    print(
-        f"  - {OUTPUT_DIR / 'research_report.md'}"
-    )
-    print(
-        f"  - {OUTPUT_DIR / 'research_quality_checks.csv'}"
+        "\nKey research files:"
     )
 
-    print("\n" + "=" * 72)
-    print("RESEARCH WORKFLOW FINISHED SUCCESSFULLY")
-    print("=" * 72)
+    key_files = [
+        "research_snapshot.csv",
+        "investment_summary.csv",
+        "valuation_summary.csv",
+        "scenario_valuations.csv",
+        "peer_multiples.csv",
+        "peer_comparison.csv",
+        "peer_valuation.csv",
+        "fundamental_kpis.csv",
+        "valuation_range.csv",
+        "scenario_summary.csv",
+        "peer_relative_summary.csv",
+        "investment_thesis.csv",
+        "research_report.md",
+        "research_quality_checks.csv",
+    ]
+
+    for filename in key_files:
+        path = OUTPUT_DIR / filename
+
+        if path.exists():
+            print(
+                f"  - {path}"
+            )
+
+    print(
+        "\nKey figures:"
+    )
+
+    figure_files = [
+        "historical_revenue_ebitda.png",
+        "peer_valuation_multiples.png",
+        "scenario_valuation.png",
+    ]
+
+    for filename in figure_files:
+        path = FIGURES_DIR / filename
+
+        if path.exists():
+            print(
+                f"  - {path}"
+            )
+
+    print(
+        "\n" + "=" * 72
+    )
+
+    print(
+        "RESEARCH WORKFLOW FINISHED SUCCESSFULLY"
+    )
+
+    print(
+        "=" * 72
+    )
 
 
 if __name__ == "__main__":
