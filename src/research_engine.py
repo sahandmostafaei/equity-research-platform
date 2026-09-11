@@ -1,281 +1,298 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
-from src.config import (
-    get_float_config,
-    get_int_config,
-    get_config_value,
-    load_research_config,
+from src.comparables import (
+    calculate_multiples,
 )
-from src.data_loader import download_financials
+
+from src.analytical_summary import (
+    build_research_dashboard,
+)
+
 from src.financial_data import (
     add_historical_ratios,
     build_historical_financials,
 )
-from src.investment_decision import build_investment_summary
-from src.investment_thesis import (
-    calculate_investment_score,
-    classify_score,
+
+from src.data_loader import (
+    download_financials,
+    download_price_data,
+    get_company_info,
 )
-from src.market_data import get_basic_market_data
+
+from src.investment_decision import (
+    build_investment_summary,
+)
+
+from src.investment_thesis import (
+    build_investment_assessment,
+    build_thesis,
+)
+
 from src.peer_valuation import (
     build_peer_valuation_summary,
     calculate_peer_median_multiples,
-    calculate_multiples,
     compare_target_to_peers,
 )
-from src.research_metrics import build_market_metrics
-from src.scenario_valuation import run_all_scenarios
-from src.scenarios import Scenario
+
+from src.research_outputs import (
+    save_research_outputs,
+)
+
+from src.research_quality import (
+    quality_checks_pass,
+    run_research_quality_checks,
+)
+
+from src.scenarios import (
+    create_default_scenarios,
+    project_ebitda,
+    project_revenue,
+)
+
+from src.valuation import (
+    calculate_dcf_value,
+    calculate_equity_value,
+    calculate_ev_ebitda_value,
+    calculate_margin_of_safety,
+    calculate_pe_value,
+    calculate_per_share_value,
+    calculate_upside,
+)
 
 
 @dataclass
-class ResearchEngineConfig:
+class ResearchResult:
+    """
+    Container for the complete equity research workflow output.
+    """
+
     target_ticker: str
-    peer_tickers: list[str]
-    tax_rate: float = 0.25
-    risk_free_rate: float = 0.04
-    equity_risk_premium: float = 0.055
-    pre_tax_cost_of_debt: float = 0.045
-    forecast_years: int = 5
-    fcf_conversion: float = 0.50
-
-    bear_revenue_growth: float = 0.03
-    base_revenue_growth: float = 0.07
-    bull_revenue_growth: float = 0.12
-
-    bear_ebitda_margin: float = 0.18
-    base_ebitda_margin: float = 0.22
-    bull_ebitda_margin: float = 0.26
-
-    bear_wacc: float = 0.11
-    base_wacc: float = 0.09
-    bull_wacc: float = 0.08
-
-    bear_terminal_growth: float = 0.02
-    base_terminal_growth: float = 0.025
-    bull_terminal_growth: float = 0.03
-
-
-@dataclass
-class ResearchEngineResult:
-    target_ticker: str
+    target_company: str
+    target_financials: pd.DataFrame
     historical_financials: pd.DataFrame
-    market_data: pd.Series
-    market_metrics: pd.Series
-    scenario_valuations: pd.DataFrame
-
     peer_financials: dict[str, pd.DataFrame]
-    peer_market_data: pd.DataFrame
-    peer_market_metrics: pd.DataFrame
     peer_multiples: pd.DataFrame
-    peer_median_multiples: pd.Series
     peer_comparison: pd.DataFrame
     peer_valuation: pd.DataFrame
-
     valuation_summary: pd.DataFrame
-    investment_summary: dict[str, object]
-
+    scenario_valuations: pd.DataFrame
+    investment_summary: dict[str, Any]
+    investment_assessment: dict[str, Any]
     estimated_wacc: float
+    market_price: float
+    research_dashboard: dict[str, Any]
 
 
-class ResearchEngine:
+class EquityResearchEngine:
     """
-    Integrated equity-research workflow.
+    Integrated equity research and fundamental valuation engine.
 
-    Architecture:
+    Workflow:
 
-        Configuration
-            ↓
-        Financial Statements
-            ↓
-        Fundamental Analysis
-            ↓
-        Market Analysis
-            ↓
-        Peer Analysis
-            ↓
-        Forecasting
-            ↓
-        DCF Valuation
-            ↓
-        Comparable Valuation
-            ↓
-        Scenario Analysis
-            ↓
-        Investment Assessment
+    1. Load market and financial data.
+    2. Standardize historical financial statements.
+    3. Calculate fundamental ratios.
+    4. Build peer-company analysis.
+    5. Estimate valuation using DCF and trading multiples.
+    6. Run bear/base/bull scenarios.
+    7. Calculate valuation upside and margin of safety.
+    8. Build an investment assessment.
+    9. Generate research outputs.
     """
 
     def __init__(
         self,
-        config: ResearchEngineConfig,
+        target_ticker: str,
+        peer_tickers: list[str],
+        start_date: str = "2018-01-01",
+        end_date: str | None = None,
     ) -> None:
-        self.config = config
+        if not target_ticker.strip():
+            raise ValueError(
+                "Target ticker cannot be empty."
+            )
+
+        if not peer_tickers:
+            raise ValueError(
+                "At least one peer ticker is required."
+            )
+
+        self.target_ticker = target_ticker.upper()
+        self.peer_tickers = [
+            ticker.upper()
+            for ticker in peer_tickers
+            if ticker.strip()
+        ]
+        self.start_date = start_date
+        self.end_date = end_date
+
+        if self.target_ticker in self.peer_tickers:
+            self.peer_tickers = [
+                ticker
+                for ticker in self.peer_tickers
+                if ticker != self.target_ticker
+            ]
+
+        if not self.peer_tickers:
+            raise ValueError(
+                "At least one peer ticker different from "
+                "the target is required."
+            )
+
+    def load_market_data(self) -> pd.DataFrame:
+        """
+        Download historical market prices for the target and peers.
+        """
+
+        tickers = [
+            self.target_ticker,
+            *self.peer_tickers,
+        ]
+
+        return download_price_data(
+            tickers=tickers,
+            start=self.start_date,
+            end=self.end_date,
+        )
 
     def load_company_financials(
         self,
         ticker: str,
     ) -> pd.DataFrame:
+        """
+        Download and standardize annual financial statements.
+        """
+
         statements = download_financials(
             ticker
         )
 
         historical = build_historical_financials(
-            income_statement=statements[
-                "income_statement"
-            ],
-            balance_sheet=statements[
-                "balance_sheet"
-            ],
-            cash_flow=statements[
-                "cash_flow"
-            ],
-            tax_rate=self.config.tax_rate,
+            statements
         )
 
-        return add_historical_ratios(
+        historical = add_historical_ratios(
             historical
         )
 
-    def load_target_financials(
+        return historical
+
+    def load_financial_universe(
         self,
-    ) -> pd.DataFrame:
-        return self.load_company_financials(
-            self.config.target_ticker
+    ) -> tuple[
+        pd.DataFrame,
+        dict[str, pd.DataFrame],
+    ]:
+        """
+        Load standardized financial statements
+        for the target and all peers.
+        """
+
+        target_financials = (
+            self.load_company_financials(
+                self.target_ticker
+            )
         )
 
-    def load_market_data_for_ticker(
-        self,
-        ticker: str,
-    ) -> pd.Series:
-        return get_basic_market_data(
-            ticker
-        )
+        peer_financials: dict[
+            str,
+            pd.DataFrame,
+        ] = {}
 
-    def load_market_data(
-        self,
-    ) -> pd.Series:
-        return self.load_market_data_for_ticker(
-            self.config.target_ticker
-        )
+        for ticker in self.peer_tickers:
+            try:
+                peer_financials[ticker] = (
+                    self.load_company_financials(
+                        ticker
+                    )
+                )
+            except Exception:
+                continue
 
-    def _latest_complete_financial_row(
-        self,
-        historical_financials: pd.DataFrame,
-    ) -> pd.Series:
-        required = [
-            "revenue",
-            "ebitda",
-            "net_income",
-            "free_cash_flow",
-            "total_debt",
-            "cash",
-        ]
-
-        available = historical_financials.dropna(
-            subset=required
-        )
-
-        if available.empty:
+        if not peer_financials:
             raise ValueError(
-                "No complete historical financial "
-                "observation is available."
+                "No peer financial data could be loaded."
             )
 
-        return available.iloc[-1]
-
-    def calculate_market_metrics(
-        self,
-        historical_financials: pd.DataFrame,
-        market_data: pd.Series,
-    ) -> pd.Series:
-        latest = (
-            self._latest_complete_financial_row(
-                historical_financials
-            )
+        return (
+            target_financials,
+            peer_financials,
         )
 
-        market_cap = float(
-            market_data["market_cap"]
-        )
-
-        shares_outstanding = float(
-            market_data[
-                "shares_outstanding"
-            ]
-        )
-
-        return build_market_metrics(
-            market_cap=market_cap,
-            total_debt=float(
-                latest["total_debt"]
-            ),
-            cash=float(
-                latest["cash"]
-            ),
-            revenue=float(
-                latest["revenue"]
-            ),
-            ebitda=float(
-                latest["ebitda"]
-            ),
-            net_income=float(
-                latest["net_income"]
-            ),
-            free_cash_flow=float(
-                latest["free_cash_flow"]
-            ),
-            shares_outstanding=(
-                shares_outstanding
-            ),
-        )
-
-    def estimate_cost_of_capital(
-        self,
-        market_data: pd.Series,
+    @staticmethod
+    def _latest_value(
+        financials: pd.DataFrame,
+        column: str,
+        default: float = 0.0,
     ) -> float:
-        market_cap = float(
-            market_data["market_cap"]
-        )
+        """
+        Safely retrieve the latest available value
+        from a standardized financial statement.
+        """
 
-        beta = float(
-            market_data.get(
-                "beta",
-                1.0,
+        if column not in financials.columns:
+            return default
+
+        series = financials[column].dropna()
+
+        if series.empty:
+            return default
+
+        return float(series.iloc[-1])
+
+    @staticmethod
+    def _calculate_wacc(
+        beta: float,
+        risk_free_rate: float = 0.04,
+        equity_risk_premium: float = 0.055,
+        cost_of_debt: float = 0.045,
+        tax_rate: float = 0.21,
+        market_cap: float = 1.0,
+        total_debt: float = 0.0,
+    ) -> float:
+        """
+        Estimate WACC using a simplified CAPM-based framework.
+
+        Cost of equity:
+            R_e = R_f + beta * ERP
+
+        WACC:
+            E/(D+E) * R_e
+            + D/(D+E) * R_d * (1-T)
+        """
+
+        if market_cap < 0:
+            raise ValueError(
+                "Market capitalization cannot be negative."
             )
-            or 1.0
-        )
 
-        debt = float(
-            market_data.get(
-                "total_debt",
-                0.0,
+        if total_debt < 0:
+            raise ValueError(
+                "Total debt cannot be negative."
             )
-            or 0.0
-        )
 
-        cost_of_equity = (
-            self.config.risk_free_rate
-            + beta
-            * self.config.equity_risk_premium
-        )
-
-        after_tax_cost_of_debt = (
-            self.config.pre_tax_cost_of_debt
-            * (1 - self.config.tax_rate)
-        )
+        if not 0 <= tax_rate < 1:
+            raise ValueError(
+                "Tax rate must be between 0 and 1."
+            )
 
         total_capital = (
-            market_cap + debt
+            market_cap + total_debt
         )
 
         if total_capital <= 0:
-            raise ValueError(
-                "Total capital must be positive."
-            )
+            return risk_free_rate
+
+        cost_of_equity = (
+            risk_free_rate
+            + beta * equity_risk_premium
+        )
 
         equity_weight = (
             market_cap
@@ -283,524 +300,752 @@ class ResearchEngine:
         )
 
         debt_weight = (
-            debt
+            total_debt
             / total_capital
         )
 
         return float(
-            equity_weight
-            * cost_of_equity
+            equity_weight * cost_of_equity
             + debt_weight
-            * after_tax_cost_of_debt
+            * cost_of_debt
+            * (1 - tax_rate)
         )
 
-    def build_scenarios(
+    def estimate_wacc(
         self,
-    ) -> dict[str, Scenario]:
-        return {
-            "bear": Scenario(
-                name="Bear",
-                revenue_growth=(
-                    self.config
-                    .bear_revenue_growth
-                ),
-                ebitda_margin=(
-                    self.config
-                    .bear_ebitda_margin
-                ),
-                wacc=self.config.bear_wacc,
-                terminal_growth=(
-                    self.config
-                    .bear_terminal_growth
-                ),
-            ),
-            "base": Scenario(
-                name="Base",
-                revenue_growth=(
-                    self.config
-                    .base_revenue_growth
-                ),
-                ebitda_margin=(
-                    self.config
-                    .base_ebitda_margin
-                ),
-                wacc=self.config.base_wacc,
-                terminal_growth=(
-                    self.config
-                    .base_terminal_growth
-                ),
-            ),
-            "bull": Scenario(
-                name="Bull",
-                revenue_growth=(
-                    self.config
-                    .bull_revenue_growth
-                ),
-                ebitda_margin=(
-                    self.config
-                    .bull_ebitda_margin
-                ),
-                wacc=self.config.bull_wacc,
-                terminal_growth=(
-                    self.config
-                    .bull_terminal_growth
-                ),
-            ),
-        }
+        company_info: dict[str, Any],
+        target_financials: pd.DataFrame,
+    ) -> float:
+        """
+        Estimate WACC from market and accounting inputs.
+        """
 
-    def run_scenarios(
-        self,
-        historical_financials: pd.DataFrame,
-        market_data: pd.Series,
-    ) -> pd.DataFrame:
-        historical_revenue = (
-            historical_financials[
-                "revenue"
-            ]
-            .dropna()
+        beta = company_info.get(
+            "beta",
+            1.0,
         )
 
-        if historical_revenue.empty:
-            raise ValueError(
-                "Historical revenue cannot be empty."
-            )
-
-        latest = (
-            self._latest_complete_financial_row(
-                historical_financials
-            )
+        market_cap = company_info.get(
+            "marketCap",
+            None,
         )
 
-        return run_all_scenarios(
-            historical_revenue=(
-                historical_revenue
-            ),
-            scenarios=self.build_scenarios(),
-            total_debt=float(
-                latest["total_debt"]
-            ),
-            cash=float(
-                latest["cash"]
-            ),
-            shares_outstanding=float(
-                market_data[
-                    "shares_outstanding"
-                ]
-            ),
-            fcf_conversion=(
-                self.config.fcf_conversion
-            ),
-            years=self.config.forecast_years,
+        if market_cap is None:
+            market_cap = 1.0
+
+        total_debt = self._latest_value(
+            target_financials,
+            "total_debt",
+            default=0.0,
         )
 
-    def load_peer_financials(
-        self,
-    ) -> dict[str, pd.DataFrame]:
-        results = {}
-
-        for ticker in self.config.peer_tickers:
-            results[ticker] = (
-                self.load_company_financials(
-                    ticker
-                )
-            )
-
-        return results
-
-    def load_peer_market_data(
-        self,
-    ) -> pd.DataFrame:
-        rows = []
-
-        for ticker in self.config.peer_tickers:
-            market_data = (
-                self.load_market_data_for_ticker(
-                    ticker
-                )
-            )
-
-            row = market_data.copy()
-            row.name = ticker
-            rows.append(row)
-
-        if not rows:
-            raise ValueError(
-                "At least one peer is required."
-            )
-
-        return pd.DataFrame(
-            rows
-        )
-
-    def build_company_market_metrics(
-        self,
-        ticker: str,
-        historical_financials: pd.DataFrame,
-        market_data: pd.Series,
-    ) -> pd.Series:
-        return self.calculate_market_metrics(
-            historical_financials=(
-                historical_financials
-            ),
-            market_data=market_data,
-        )
-
-    def build_peer_market_metrics(
-        self,
-        peer_financials: dict[str, pd.DataFrame],
-        peer_market_data: pd.DataFrame,
-    ) -> pd.DataFrame:
-        rows = []
-
-        for ticker, financials in (
-            peer_financials.items()
+        try:
+            beta = float(beta)
+        except (
+            TypeError,
+            ValueError,
         ):
-            if ticker not in peer_market_data.index:
-                continue
+            beta = 1.0
 
-            market_data = (
-                peer_market_data.loc[ticker]
-            )
-
-            metrics = (
-                self.build_company_market_metrics(
-                    ticker=ticker,
-                    historical_financials=(
-                        financials
-                    ),
-                    market_data=market_data,
-                )
-            )
-
-            metrics.name = ticker
-            rows.append(metrics)
-
-        if not rows:
-            raise ValueError(
-                "No peer market metrics could "
-                "be calculated."
-            )
-
-        return pd.DataFrame(
-            rows
-        )
-
-    def build_peer_multiples(
-        self,
-        peer_financials: dict[str, pd.DataFrame],
-        peer_market_data: pd.DataFrame,
-    ) -> pd.DataFrame:
-        rows = []
-
-        for ticker, financials in (
-            peer_financials.items()
-        ):
-            if ticker not in peer_market_data.index:
-                continue
-
-            latest = (
-                self._latest_complete_financial_row(
-                    financials
-                )
-            )
-
-            market_data = (
-                peer_market_data.loc[ticker]
-            )
-
-            metrics = (
-                self.build_company_market_metrics(
-                    ticker=ticker,
-                    historical_financials=(
-                        financials
-                    ),
-                    market_data=market_data,
-                )
-            )
-
+        try:
             market_cap = float(
-                metrics["market_cap"]
+                market_cap
+            )
+        except (
+            TypeError,
+            ValueError,
+        ):
+            market_cap = 1.0
+
+        if beta <= 0:
+            beta = 1.0
+
+        if market_cap <= 0:
+            market_cap = 1.0
+
+        return self._calculate_wacc(
+            beta=beta,
+            market_cap=market_cap,
+            total_debt=max(
+                total_debt,
+                0.0,
+            ),
+        )
+
+    def build_peer_analysis(
+        self,
+        target_financials: pd.DataFrame,
+        peer_financials: dict[str, pd.DataFrame],
+        market_prices: pd.DataFrame,
+    ) -> tuple[
+        pd.DataFrame,
+        pd.DataFrame,
+        pd.DataFrame,
+    ]:
+        """
+        Build peer multiples, target-vs-peer comparison,
+        and peer-implied valuation.
+        """
+
+        companies: dict[
+            str,
+            pd.Series,
+        ] = {}
+
+        companies[
+            self.target_ticker
+        ] = target_financials.iloc[-1]
+
+        for ticker, financials in peer_financials.items():
+            if not financials.empty:
+                companies[ticker] = (
+                    financials.iloc[-1]
+                )
+
+        market_caps = {}
+        enterprise_values = {}
+        revenues = {}
+        ebitdas = {}
+        earnings = {}
+        free_cash_flows = {}
+
+        for ticker, row in companies.items():
+            price = 0.0
+
+            if ticker in market_prices.columns:
+                prices = (
+                    market_prices[ticker]
+                    .dropna()
+                )
+
+                if not prices.empty:
+                    price = float(
+                        prices.iloc[-1]
+                    )
+
+            shares = float(
+                row.get(
+                    "shares_outstanding",
+                    0.0,
+                )
+                or 0.0
+            )
+
+            market_cap = (
+                price * shares
+            )
+
+            total_debt = float(
+                row.get(
+                    "total_debt",
+                    0.0,
+                )
+                or 0.0
+            )
+
+            cash = float(
+                row.get(
+                    "cash",
+                    0.0,
+                )
+                or 0.0
             )
 
             enterprise_value = (
-                float(metrics["enterprise_value"])
+                market_cap
+                + total_debt
+                - cash
             )
 
-            revenue = float(
-                latest["revenue"]
+            market_caps[ticker] = (
+                market_cap
             )
 
-            ebitda = float(
-                latest["ebitda"]
+            enterprise_values[ticker] = (
+                enterprise_value
             )
 
-            net_income = float(
-                latest["net_income"]
+            revenues[ticker] = float(
+                row.get(
+                    "revenue",
+                    0.0,
+                )
+                or 0.0
             )
 
-            free_cash_flow = float(
-                latest["free_cash_flow"]
+            ebitdas[ticker] = float(
+                row.get(
+                    "ebitda",
+                    0.0,
+                )
+                or 0.0
             )
 
-            multiples = calculate_multiples(
-                market_cap=pd.Series(
-                    {ticker: market_cap}
-                ),
-                enterprise_value=pd.Series(
-                    {
-                        ticker:
-                        enterprise_value
-                    }
-                ),
-                revenue=pd.Series(
-                    {ticker: revenue}
-                ),
-                ebitda=pd.Series(
-                    {ticker: ebitda}
-                ),
-                earnings=pd.Series(
-                    {ticker: net_income}
-                ),
-                free_cash_flow=pd.Series(
-                    {
-                        ticker:
-                        free_cash_flow
-                    }
-                ),
+            earnings[ticker] = float(
+                row.get(
+                    "net_income",
+                    0.0,
+                )
+                or 0.0
             )
 
-            rows.append(
-                multiples.loc[ticker]
+            free_cash_flows[ticker] = (
+                float(
+                    row.get(
+                        "free_cash_flow",
+                        0.0,
+                    )
+                    or 0.0
+                )
             )
 
-        if not rows:
-            raise ValueError(
-                "Peer multiples could not "
-                "be calculated."
-            )
-
-        return pd.DataFrame(
-            rows,
-            index=[
-                row.name
-                for row in rows
-            ],
-        )
-
-    def build_target_peer_comparison(
-        self,
-        target_metrics: pd.Series,
-        peer_medians: pd.Series,
-        target_financials: pd.DataFrame,
-        target_market_data: pd.Series,
-    ) -> pd.DataFrame:
-        latest = (
-            self._latest_complete_financial_row(
-                target_financials
-            )
-        )
-
-        market_cap = float(
-            target_metrics["market_cap"]
-        )
-
-        enterprise_value = float(
-            target_metrics[
-                "enterprise_value"
-            ]
-        )
-
-        revenue = float(
-            latest["revenue"]
-        )
-
-        ebitda = float(
-            latest["ebitda"]
-        )
-
-        net_income = float(
-            latest["net_income"]
-        )
-
-        free_cash_flow = float(
-            latest["free_cash_flow"]
-        )
-
-        target_multiples = calculate_multiples(
+        multiples = calculate_multiples(
             market_cap=pd.Series(
-                {
-                    self.config.target_ticker:
-                    market_cap
-                }
+                market_caps
             ),
             enterprise_value=pd.Series(
-                {
-                    self.config.target_ticker:
-                    enterprise_value
-                }
+                enterprise_values
             ),
             revenue=pd.Series(
-                {
-                    self.config.target_ticker:
-                    revenue
-                }
+                revenues
             ),
             ebitda=pd.Series(
-                {
-                    self.config.target_ticker:
-                    ebitda
-                }
+                ebitdas
             ),
             earnings=pd.Series(
-                {
-                    self.config.target_ticker:
-                    net_income
-                }
+                earnings
             ),
             free_cash_flow=pd.Series(
-                {
-                    self.config.target_ticker:
-                    free_cash_flow
-                }
+                free_cash_flows
             ),
-        ).iloc[0]
-
-        return compare_target_to_peers(
-            target_multiples=target_multiples,
-            peer_medians=peer_medians,
         )
 
-    def build_peer_valuation(
-        self,
-        target_financials: pd.DataFrame,
-        target_market_data: pd.Series,
-        peer_medians: pd.Series,
-    ) -> pd.DataFrame:
-        latest = (
-            self._latest_complete_financial_row(
-                target_financials
+        multiples = (
+            multiples.replace(
+                [
+                    float("inf"),
+                    float("-inf"),
+                ],
+                pd.NA,
             )
         )
 
-        shares_outstanding = float(
-            target_market_data[
-                "shares_outstanding"
-            ]
+        multiples = multiples.dropna(
+            how="all"
         )
+
+        target_row = pd.Series(
+            {
+                "ticker": self.target_ticker,
+                **multiples.loc[
+                    self.target_ticker
+                ].to_dict(),
+            }
+        )
+
+        peer_rows = []
+
+        for ticker in self.peer_tickers:
+            if ticker not in multiples.index:
+                continue
+
+            peer_rows.append(
+                {
+                    "ticker": ticker,
+                    **multiples.loc[
+                        ticker
+                    ].to_dict(),
+                }
+            )
+
+        peer_table = pd.DataFrame(
+            peer_rows
+        )
+
+        if peer_table.empty:
+            raise ValueError(
+                "No valid peer multiples were generated."
+            )
+
+        peer_comparison = (
+            compare_target_to_peers(
+                target_multiples=target_row,
+                peer_multiples=peer_table,
+            )
+        )
+
+        peer_medians = (
+            calculate_peer_median_multiples(
+                peer_table.drop(
+                    columns=["ticker"],
+                    errors="ignore",
+                )
+            )
+        )
+
+        target_latest = (
+            target_financials.iloc[-1]
+        )
+
+        shares = float(
+            target_latest.get(
+                "shares_outstanding",
+                0.0,
+            )
+            or 0.0
+        )
+
+        if shares <= 0:
+            shares = 1.0
 
         target_metrics = pd.Series(
             {
                 "eps": (
                     float(
-                        latest["net_income"]
+                        target_latest.get(
+                            "net_income",
+                            0.0,
+                        )
+                        or 0.0
                     )
-                    / shares_outstanding
+                    / shares
                 ),
                 "revenue_per_share": (
                     float(
-                        latest["revenue"]
+                        target_latest.get(
+                            "revenue",
+                            0.0,
+                        )
+                        or 0.0
                     )
-                    / shares_outstanding
+                    / shares
                 ),
                 "revenue": float(
-                    latest["revenue"]
+                    target_latest.get(
+                        "revenue",
+                        0.0,
+                    )
+                    or 0.0
                 ),
                 "ebitda": float(
-                    latest["ebitda"]
-                ),
-                "free_cash_flow": float(
-                    latest["free_cash_flow"]
+                    target_latest.get(
+                        "ebitda",
+                        0.0,
+                    )
+                    or 0.0
                 ),
             }
         )
 
-        return build_peer_valuation_summary(
-            target_metrics=target_metrics,
-            peer_medians=peer_medians,
-            total_debt=float(
-                latest["total_debt"]
-            ),
-            cash=float(
-                latest["cash"]
-            ),
-            shares_outstanding=(
-                shares_outstanding
-            ),
+        total_debt = float(
+            target_latest.get(
+                "total_debt",
+                0.0,
+            )
+            or 0.0
         )
+
+        cash = float(
+            target_latest.get(
+                "cash",
+                0.0,
+            )
+            or 0.0
+        )
+
+        peer_valuation = (
+            build_peer_valuation_summary(
+                target_metrics=target_metrics,
+                peer_medians=peer_medians,
+                total_debt=total_debt,
+                cash=cash,
+                shares_outstanding=shares,
+            )
+        )
+
+        return (
+            multiples,
+            peer_comparison,
+            peer_valuation,
+        )
+
+    def build_dcf_valuation(
+        self,
+        target_financials: pd.DataFrame,
+        wacc: float,
+        scenario_name: str = "base",
+        forecast_years: int = 5,
+    ) -> dict[str, float]:
+        """
+        Build a simplified DCF valuation from historical FCF.
+        """
+
+        latest_revenue = self._latest_value(
+            target_financials,
+            "revenue",
+        )
+
+        latest_fcf = self._latest_value(
+            target_financials,
+            "free_cash_flow",
+        )
+
+        if latest_revenue <= 0:
+            raise ValueError(
+                "Latest revenue must be positive for DCF."
+            )
+
+        if latest_fcf <= 0:
+            latest_fcf = max(
+                latest_revenue * 0.05,
+                1.0,
+            )
+
+        scenarios = (
+            create_default_scenarios()
+        )
+
+        if scenario_name not in scenarios:
+            raise ValueError(
+                f"Unknown scenario: {scenario_name}"
+            )
+
+        scenario = scenarios[
+            scenario_name
+        ]
+
+        projected_revenue = (
+            project_revenue(
+                starting_revenue=latest_revenue,
+                growth_rate=scenario.revenue_growth,
+                years=forecast_years,
+            )
+        )
+
+        projected_ebitda = (
+            project_ebitda(
+                projected_revenue,
+                scenario.ebitda_margin,
+            )
+        )
+
+        base_fcf_margin = (
+            latest_fcf
+            / latest_revenue
+        )
+
+        projected_fcf = [
+            revenue * base_fcf_margin
+            for revenue in projected_revenue
+        ]
+
+        scenario_wacc = max(
+            wacc,
+            scenario.wacc,
+        )
+
+        dcf_value = calculate_dcf_value(
+            free_cash_flows=projected_fcf,
+            wacc=scenario_wacc,
+            terminal_growth=scenario.terminal_growth,
+        )
+
+        latest_debt = self._latest_value(
+            target_financials,
+            "total_debt",
+        )
+
+        latest_cash = self._latest_value(
+            target_financials,
+            "cash",
+        )
+
+        equity_value = (
+            calculate_equity_value(
+                enterprise_value=dcf_value,
+                total_debt=latest_debt,
+                cash=latest_cash,
+            )
+        )
+
+        shares = self._latest_value(
+            target_financials,
+            "shares_outstanding",
+        )
+
+        if shares <= 0:
+            shares = 1.0
+
+        per_share = (
+            calculate_per_share_value(
+                equity_value=equity_value,
+                shares_outstanding=shares,
+            )
+        )
+
+        return {
+            "scenario": scenario.name,
+            "enterprise_value": dcf_value,
+            "equity_value": equity_value,
+            "implied_per_share": per_share,
+            "terminal_growth": (
+                scenario.terminal_growth
+            ),
+            "wacc": scenario_wacc,
+            "final_projected_revenue": (
+                projected_revenue[-1]
+            ),
+            "final_projected_ebitda": (
+                projected_ebitda[-1]
+            ),
+        }
 
     def build_valuation_summary(
         self,
-        scenario_valuations: pd.DataFrame,
+        target_financials: pd.DataFrame,
         peer_valuation: pd.DataFrame,
-    ) -> pd.DataFrame:
-        rows = []
+        wacc: float,
+    ) -> tuple[
+        pd.DataFrame,
+        pd.DataFrame,
+    ]:
+        """
+        Combine DCF and peer-based valuation outputs.
+        """
 
-        for _, row in (
-            scenario_valuations.iterrows()
+        dcf_values = []
+
+        for scenario_name in (
+            "bear",
+            "base",
+            "bull",
         ):
-            rows.append(
-                {
-                    "method": (
-                        f"DCF - "
-                        f"{row['scenario']}"
-                    ),
-                    "valuation_type": (
-                        "DCF"
-                    ),
-                    "implied_per_share": (
-                        float(
-                            row[
-                                "per_share_value"
+            try:
+                dcf_result = (
+                    self.build_dcf_valuation(
+                        target_financials=target_financials,
+                        wacc=wacc,
+                        scenario_name=scenario_name,
+                    )
+                )
+
+                dcf_values.append(
+                    {
+                        "method": (
+                            f"DCF - "
+                            f"{scenario_name.title()}"
+                        ),
+                        "implied_per_share": (
+                            dcf_result[
+                                "implied_per_share"
                             ]
-                        )
-                    ),
-                }
+                        ),
+                    }
+                )
+            except ValueError:
+                continue
+
+        latest = (
+            target_financials.iloc[-1]
+        )
+
+        shares = float(
+            latest.get(
+                "shares_outstanding",
+                0.0,
             )
+            or 0.0
+        )
+
+        if shares <= 0:
+            shares = 1.0
+
+        eps = (
+            float(
+                latest.get(
+                    "net_income",
+                    0.0,
+                )
+                or 0.0
+            )
+            / shares
+        )
+
+        net_debt = (
+            float(
+                latest.get(
+                    "total_debt",
+                    0.0,
+                )
+                or 0.0
+            )
+            - float(
+                latest.get(
+                    "cash",
+                    0.0,
+                )
+                or 0.0
+            )
+        )
+
+        ebitda = float(
+            latest.get(
+                "ebitda",
+                0.0,
+            )
+            or 0.0
+        )
+
+        peer_rows = []
 
         if not peer_valuation.empty:
-            rows.extend(
-                peer_valuation[
-                    [
-                        "method",
-                        "valuation_type",
-                        "implied_per_share",
-                    ]
-                ].to_dict(
-                    orient="records"
+            if "pe" in peer_valuation.columns:
+                peer_pe = (
+                    peer_valuation["pe"]
+                    .dropna()
                 )
-            )
 
-        return pd.DataFrame(
-            rows
+                if not peer_pe.empty:
+                    try:
+                        value = calculate_pe_value(
+                            eps=eps,
+                            peer_pe=float(
+                                peer_pe.iloc[0]
+                            ),
+                        )
+
+                        peer_rows.append(
+                            {
+                                "method": (
+                                    "Peer P/E"
+                                ),
+                                "implied_per_share": (
+                                    value
+                                ),
+                            }
+                        )
+                    except ValueError:
+                        pass
+
+            if (
+                "ev_ebitda"
+                in peer_valuation.columns
+            ):
+                peer_ev_ebitda = (
+                    peer_valuation[
+                        "ev_ebitda"
+                    ]
+                    .dropna()
+                )
+
+                if not peer_ev_ebitda.empty:
+                    try:
+                        value = (
+                            calculate_ev_ebitda_value(
+                                ebitda=ebitda,
+                                peer_ev_ebitda=float(
+                                    peer_ev_ebitda.iloc[
+                                        0
+                                    ]
+                                ),
+                                net_debt=net_debt,
+                                shares_outstanding=shares,
+                            )
+                        )
+
+                        peer_rows.append(
+                            {
+                                "method": (
+                                    "Peer EV/EBITDA"
+                                ),
+                                "implied_per_share": (
+                                    value
+                                ),
+                            }
+                        )
+                    except ValueError:
+                        pass
+
+        valuation_rows = (
+            dcf_values + peer_rows
         )
 
-    def build_investment_assessment(
-        self,
-        historical_financials: pd.DataFrame,
-        market_data: pd.Series,
-        valuation_summary: pd.DataFrame,
-    ) -> dict[str, object]:
-        required = [
-            "roic",
-            "revenue_growth",
-            "fcf_margin",
-            "net_debt_to_ebitda",
-        ]
-
-        available = historical_financials.dropna(
-            subset=required
+        valuation_summary = pd.DataFrame(
+            valuation_rows
         )
 
-        if available.empty:
+        if valuation_summary.empty:
             raise ValueError(
-                "No complete fundamental observation "
-                "is available for investment scoring."
+                "No valid valuation outputs were generated."
             )
 
-        latest = available.iloc[-1]
+        scenario_valuations = pd.DataFrame(
+            dcf_values
+        )
+
+        return (
+            valuation_summary,
+            scenario_valuations,
+        )
+
+    def run(
+        self,
+    ) -> ResearchResult:
+        """
+        Execute the complete equity research workflow.
+        """
+
+        market_prices = (
+            self.load_market_data()
+        )
+
+        target_financials, peer_financials = (
+            self.load_financial_universe()
+        )
+
+        company_info = get_company_info(
+            self.target_ticker
+        )
+
+        wacc = self.estimate_wacc(
+            company_info=company_info,
+            target_financials=target_financials,
+        )
+
+        (
+            peer_multiples,
+            peer_comparison,
+            peer_valuation,
+        ) = self.build_peer_analysis(
+            target_financials=target_financials,
+            peer_financials=peer_financials,
+            market_prices=market_prices,
+        )
+
+        (
+            valuation_summary,
+            scenario_valuations,
+        ) = self.build_valuation_summary(
+            target_financials=target_financials,
+            peer_valuation=peer_valuation,
+            wacc=wacc,
+        )
+
+        target_prices = (
+            market_prices[
+                self.target_ticker
+            ]
+            .dropna()
+        )
+
+        if target_prices.empty:
+            raise ValueError(
+                "No market price is available "
+                f"for {self.target_ticker}."
+            )
 
         market_price = float(
-            market_data["current_price"]
+            target_prices.iloc[-1]
         )
 
         valuation_values = (
@@ -812,393 +1057,223 @@ class ResearchEngine:
 
         if valuation_values.empty:
             raise ValueError(
-                "No valuation observations "
-                "are available."
+                "No valid valuation reference is available."
             )
 
-        consensus_value = float(
+        median_value = float(
             valuation_values.median()
         )
 
         valuation_upside = (
-            consensus_value
-            / market_price
-            - 1
+            calculate_upside(
+                intrinsic_value=median_value,
+                market_price=market_price,
+            )
         )
 
-        investment_score = (
-            calculate_investment_score(
-                valuation_upside=(
-                    valuation_upside
-                ),
-                roic=float(
-                    latest["roic"]
-                ),
-                revenue_growth=float(
-                    latest[
-                        "revenue_growth"
-                    ]
-                ),
-                fcf_margin=float(
-                    latest[
-                        "fcf_margin"
-                    ]
-                ),
-                net_debt_to_ebitda=float(
-                    latest[
-                        "net_debt_to_ebitda"
-                    ]
+        margin_of_safety = (
+            calculate_margin_of_safety(
+                intrinsic_value=median_value,
+                market_price=market_price,
+            )
+            if median_value > 0
+            else 0.0
+        )
+
+        latest = (
+            target_financials.iloc[-1]
+        )
+
+        roic = float(
+            latest.get(
+                "roic",
+                0.0,
+            )
+            or 0.0
+        )
+
+        revenue_growth = float(
+            latest.get(
+                "revenue_growth",
+                0.0,
+            )
+            or 0.0
+        )
+
+        fcf = float(
+            latest.get(
+                "free_cash_flow",
+                0.0,
+            )
+            or 0.0
+        )
+
+        revenue = float(
+            latest.get(
+                "revenue",
+                0.0,
+            )
+            or 0.0
+        )
+
+        fcf_margin = (
+            fcf / revenue
+            if revenue > 0
+            else 0.0
+        )
+
+        net_debt = (
+            float(
+                latest.get(
+                    "total_debt",
+                    0.0,
+                )
+                or 0.0
+            )
+            - float(
+                latest.get(
+                    "cash",
+                    0.0,
+                )
+                or 0.0
+            )
+        )
+
+        ebitda = float(
+            latest.get(
+                "ebitda",
+                0.0,
+            )
+            or 0.0
+        )
+
+        net_debt_to_ebitda = (
+            net_debt / ebitda
+            if ebitda > 0
+            else 0.0
+        )
+
+        investment_assessment = (
+            build_investment_assessment(
+                valuation_upside=valuation_upside,
+                roic=roic,
+                revenue_growth=revenue_growth,
+                fcf_margin=fcf_margin,
+                net_debt_to_ebitda=(
+                    net_debt_to_ebitda
                 ),
             )
         )
 
-        summary = build_investment_summary(
-            fundamental_score=(
-                investment_score
-            ),
-            valuation_upside=(
-                valuation_upside
-            ),
-        )
-
-        summary["consensus_value"] = (
-            consensus_value
-        )
-
-        summary["market_price"] = (
-            market_price
-        )
-
-        summary["valuation_upside"] = (
-            valuation_upside
-        )
-
-        summary["score_classification"] = (
-            classify_score(
-                investment_score
-            )
-        )
-
-        return summary
-
-    def run(self) -> ResearchEngineResult:
-        target_financials = (
-            self.load_target_financials()
-        )
-
-        target_market_data = (
-            self.load_market_data()
-        )
-
-        target_market_metrics = (
-            self.calculate_market_metrics(
-                historical_financials=(
-                    target_financials
-                ),
-                market_data=(
-                    target_market_data
-                ),
-            )
-        )
-
-        estimated_wacc = (
-            self.estimate_cost_of_capital(
-                target_market_data
-            )
-        )
-
-        scenario_valuations = (
-            self.run_scenarios(
-                historical_financials=(
-                    target_financials
-                ),
-                market_data=(
-                    target_market_data
-                ),
-            )
-        )
-
-        peer_financials = (
-            self.load_peer_financials()
-        )
-
-        peer_market_data = (
-            self.load_peer_market_data()
-        )
-
-        peer_market_metrics = (
-            self.build_peer_market_metrics(
-                peer_financials=(
-                    peer_financials
-                ),
-                peer_market_data=(
-                    peer_market_data
-                ),
-            )
-        )
-
-        peer_multiples = (
-            self.build_peer_multiples(
-                peer_financials=(
-                    peer_financials
-                ),
-                peer_market_data=(
-                    peer_market_data
-                ),
-            )
-        )
-
-        peer_median_multiples = (
-            calculate_peer_median_multiples(
-                peer_multiples
-            )
-        )
-
-        peer_comparison = (
-            self.build_target_peer_comparison(
-                target_metrics=(
-                    target_market_metrics
-                ),
-                peer_medians=(
-                    peer_median_multiples
-                ),
-                target_financials=(
-                    target_financials
-                ),
-                target_market_data=(
-                    target_market_data
-                ),
-            )
-        )
-
-        peer_valuation = (
-            self.build_peer_valuation(
-                target_financials=(
-                    target_financials
-                ),
-                target_market_data=(
-                    target_market_data
-                ),
-                peer_medians=(
-                    peer_median_multiples
-                ),
-            )
-        )
-
-        valuation_summary = (
-            self.build_valuation_summary(
-                scenario_valuations=(
-                    scenario_valuations
-                ),
-                peer_valuation=(
-                    peer_valuation
-                ),
-            )
+        fundamental_score = (
+            investment_assessment[
+                "fundamental_score"
+            ]
         )
 
         investment_summary = (
-            self.build_investment_assessment(
-                historical_financials=(
-                    target_financials
+            build_investment_summary(
+                fundamental_score=(
+                    fundamental_score
                 ),
-                market_data=(
-                    target_market_data
-                ),
-                valuation_summary=(
-                    valuation_summary
+                valuation_upside=(
+                    valuation_upside
                 ),
             )
         )
 
-        return ResearchEngineResult(
-            target_ticker=(
-                self.config.target_ticker
-            ),
-            historical_financials=(
-                target_financials
-            ),
-            market_data=(
-                target_market_data
-            ),
-            market_metrics=(
-                target_market_metrics
-            ),
-            scenario_valuations=(
-                scenario_valuations
-            ),
-            peer_financials=(
-                peer_financials
-            ),
-            peer_market_data=(
-                peer_market_data
-            ),
-            peer_market_metrics=(
-                peer_market_metrics
-            ),
-            peer_multiples=(
-                peer_multiples
-            ),
-            peer_median_multiples=(
-                peer_median_multiples
-            ),
-            peer_comparison=(
-                peer_comparison
-            ),
-            peer_valuation=(
-                peer_valuation
-            ),
-            valuation_summary=(
-                valuation_summary
-            ),
-            investment_summary=(
-                investment_summary
-            ),
-            estimated_wacc=(
-                estimated_wacc
-            ),
-        )
+        investment_summary[
+            "market_price"
+        ] = market_price
 
+        investment_summary[
+            "consensus_value"
+        ] = median_value
 
-def create_default_research_engine() -> ResearchEngine:
-    """
-    Create a configured research engine from
-    data/research_config.csv.
-    """
+        investment_summary[
+            "median_valuation_reference"
+        ] = median_value
 
-    try:
-        config_table = (
-            load_research_config()
-        )
+        investment_summary[
+            "margin_of_safety"
+        ] = margin_of_safety
 
-        target_ticker = (
-            get_config_value(
-                config_table,
-                "target_ticker",
-            )
-        )
-
-        peer_tickers = [
-            get_config_value(
-                config_table,
-                f"peer_{index}",
-            )
-            for index in range(1, 5)
+        investment_summary[
+            "score_classification"
+        ] = investment_assessment[
+            "score_classification"
         ]
 
-        config = ResearchEngineConfig(
-            target_ticker=target_ticker,
-            peer_tickers=peer_tickers,
-            tax_rate=get_float_config(
-                config_table,
-                "tax_rate",
-            ),
-            risk_free_rate=get_float_config(
-                config_table,
-                "risk_free_rate",
-            ),
-            equity_risk_premium=(
-                get_float_config(
-                    config_table,
-                    "equity_risk_premium",
-                )
-            ),
-            pre_tax_cost_of_debt=(
-                get_float_config(
-                    config_table,
-                    "pre_tax_cost_of_debt",
-                )
-            ),
-            forecast_years=get_int_config(
-                config_table,
-                "forecast_years",
-            ),
-            fcf_conversion=get_float_config(
-                config_table,
-                "fcf_conversion",
-            ),
-            bear_revenue_growth=(
-                get_float_config(
-                    config_table,
-                    "bear_revenue_growth",
-                )
-            ),
-            base_revenue_growth=(
-                get_float_config(
-                    config_table,
-                    "base_revenue_growth",
-                )
-            ),
-            bull_revenue_growth=(
-                get_float_config(
-                    config_table,
-                    "bull_revenue_growth",
-                )
-            ),
-            bear_ebitda_margin=(
-                get_float_config(
-                    config_table,
-                    "bear_ebitda_margin",
-                )
-            ),
-            base_ebitda_margin=(
-                get_float_config(
-                    config_table,
-                    "base_ebitda_margin",
-                )
-            ),
-            bull_ebitda_margin=(
-                get_float_config(
-                    config_table,
-                    "bull_ebitda_margin",
-                )
-            ),
-            bear_wacc=get_float_config(
-                config_table,
-                "bear_wacc",
-            ),
-            base_wacc=get_float_config(
-                config_table,
-                "base_wacc",
-            ),
-            bull_wacc=get_float_config(
-                config_table,
-                "bull_wacc",
-            ),
-            bear_terminal_growth=(
-                get_float_config(
-                    config_table,
-                    "bear_terminal_growth",
-                )
-            ),
-            base_terminal_growth=(
-                get_float_config(
-                    config_table,
-                    "base_terminal_growth",
-                )
-            ),
-            bull_terminal_growth=(
-                get_float_config(
-                    config_table,
-                    "bull_terminal_growth",
-                )
-            ),
-        )
-
-        return ResearchEngine(config)
-
-    except (
-        FileNotFoundError,
-        KeyError,
-        ValueError,
-    ):
-        return ResearchEngine(
-            ResearchEngineConfig(
-                target_ticker="MSFT",
-                peer_tickers=[
-                    "GOOGL",
-                    "META",
-                    "AAPL",
-                    "AMZN",
-                ],
+        research_dashboard = (
+            build_research_dashboard(
+                type(
+                    "ResearchDashboardInput",
+                    (),
+                    {
+                        "target_ticker": (
+                            self.target_ticker
+                        ),
+                        "historical_financials": (
+                            target_financials
+                        ),
+                        "valuation_summary": (
+                            valuation_summary
+                        ),
+                        "scenario_valuations": (
+                            scenario_valuations
+                        ),
+                        "peer_comparison": (
+                            peer_comparison
+                        ),
+                        "investment_summary": (
+                            investment_summary
+                        ),
+                        "estimated_wacc": wacc,
+                    },
+                )()
             )
         )
+
+        return ResearchResult(
+            target_ticker=self.target_ticker,
+            target_company=company_info.get(
+                "longName",
+                self.target_ticker,
+            ),
+            target_financials=target_financials,
+            historical_financials=target_financials,
+            peer_financials=peer_financials,
+            peer_multiples=peer_multiples,
+            peer_comparison=peer_comparison,
+            peer_valuation=peer_valuation,
+            valuation_summary=valuation_summary,
+            scenario_valuations=scenario_valuations,
+            investment_summary=investment_summary,
+            investment_assessment=(
+                investment_assessment
+            ),
+            estimated_wacc=wacc,
+            market_price=market_price,
+            research_dashboard=research_dashboard,
+        )
+
+
+def run_research(
+    target_ticker: str,
+    peer_tickers: list[str],
+    start_date: str = "2018-01-01",
+    end_date: str | None = None,
+) -> ResearchResult:
+    """
+    Convenience function for running the integrated
+    equity research workflow.
+    """
+
+    engine = EquityResearchEngine(
+        target_ticker=target_ticker,
+        peer_tickers=peer_tickers,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    return engine.run()
