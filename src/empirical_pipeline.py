@@ -10,10 +10,7 @@ from src.financial_data import (
     build_historical_financials,
 )
 from src.market_data import get_basic_market_data
-from src.research_engine import (
-    ResearchEngine,
-    ResearchEngineConfig,
-)
+from src.research_engine import EquityResearchEngine
 
 
 DEFAULT_OUTPUT_DIR = Path("data/processed")
@@ -146,25 +143,15 @@ def build_universe_market_dataset(
 def build_research_engine(
     target_ticker: str,
     peer_tickers: list[str],
-    tax_rate: float = 0.25,
-    risk_free_rate: float = 0.04,
-    equity_risk_premium: float = 0.055,
-    pre_tax_cost_of_debt: float = 0.045,
-    forecast_years: int = 5,
-    fcf_conversion: float = 0.50,
-) -> ResearchEngine:
+    start_date: str = "2018-01-01",
+    end_date: str | None = None,
+) -> EquityResearchEngine:
     """
-    Construct a configured research engine.
+    Construct the integrated equity research engine.
     """
-    config = ResearchEngineConfig(
+    return EquityResearchEngine(
         target_ticker=target_ticker,
         peer_tickers=peer_tickers,
-        tax_rate=tax_rate,
-        risk_free_rate=risk_free_rate,
-        equity_risk_premium=equity_risk_premium,
-        pre_tax_cost_of_debt=pre_tax_cost_of_debt,
-        forecast_years=forecast_years,
-        fcf_conversion=fcf_conversion,
+        start_date=start_date,
+        end_date=end_date,
     )
-
-    return ResearchEngine(config)
