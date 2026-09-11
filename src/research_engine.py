@@ -1,60 +1,41 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
-from src.comparables import (
-    calculate_multiples,
-)
-
 from src.analytical_summary import (
     build_research_dashboard,
 )
-
-from src.financial_data import (
-    add_historical_ratios,
-    build_historical_financials,
+from src.comparables import (
+    calculate_multiples,
 )
-
 from src.data_loader import (
     download_financials,
     download_price_data,
     get_company_info,
 )
-
+from src.financial_data import (
+    add_historical_ratios,
+    build_historical_financials,
+)
 from src.investment_decision import (
     build_investment_summary,
 )
-
 from src.investment_thesis import (
     build_investment_assessment,
-    build_thesis,
 )
-
 from src.peer_valuation import (
     build_peer_valuation_summary,
     calculate_peer_median_multiples,
     compare_target_to_peers,
 )
-
-from src.research_outputs import (
-    save_research_outputs,
-)
-
-from src.research_quality import (
-    quality_checks_pass,
-    run_research_quality_checks,
-)
-
 from src.scenarios import (
     create_default_scenarios,
     project_ebitda,
     project_revenue,
 )
-
 from src.valuation import (
     calculate_dcf_value,
     calculate_equity_value,
@@ -123,12 +104,16 @@ class EquityResearchEngine:
                 "At least one peer ticker is required."
             )
 
-        self.target_ticker = target_ticker.upper()
+        self.target_ticker = (
+            target_ticker.strip().upper()
+        )
+
         self.peer_tickers = [
-            ticker.upper()
+            ticker.strip().upper()
             for ticker in peer_tickers
             if ticker.strip()
         ]
+
         self.start_date = start_date
         self.end_date = end_date
 
@@ -174,7 +159,15 @@ class EquityResearchEngine:
         )
 
         historical = build_historical_financials(
-            statements
+            income_statement=(
+                statements["income_statement"]
+            ),
+            balance_sheet=(
+                statements["balance_sheet"]
+            ),
+            cash_flow=(
+                statements["cash_flow"]
+            ),
         )
 
         historical = add_historical_ratios(
@@ -402,14 +395,15 @@ class EquityResearchEngine:
                     financials.iloc[-1]
                 )
 
-        market_caps = {}
-        enterprise_values = {}
-        revenues = {}
-        ebitdas = {}
-        earnings = {}
-        free_cash_flows = {}
+        market_caps: dict[str, float] = {}
+        enterprise_values: dict[str, float] = {}
+        revenues: dict[str, float] = {}
+        ebitdas: dict[str, float] = {}
+        earnings: dict[str, float] = {}
+        free_cash_flows: dict[str, float] = {}
 
         for ticker, row in companies.items():
+
             price = 0.0
 
             if ticker in market_prices.columns:
@@ -489,14 +483,12 @@ class EquityResearchEngine:
                 or 0.0
             )
 
-            free_cash_flows[ticker] = (
-                float(
-                    row.get(
-                        "free_cash_flow",
-                        0.0,
-                    )
-                    or 0.0
+            free_cash_flows[ticker] = float(
+                row.get(
+                    "free_cash_flow",
+                    0.0,
                 )
+                or 0.0
             )
 
         multiples = calculate_multiples(
@@ -534,6 +526,11 @@ class EquityResearchEngine:
             how="all"
         )
 
+        if self.target_ticker not in multiples.index:
+            raise ValueError(
+                "Target company multiples could not be generated."
+            )
+
         target_row = pd.Series(
             {
                 "ticker": self.target_ticker,
@@ -543,9 +540,10 @@ class EquityResearchEngine:
             }
         )
 
-        peer_rows = []
+        peer_rows: list[dict[str, Any]] = []
 
         for ticker in self.peer_tickers:
+
             if ticker not in multiples.index:
                 continue
 
@@ -598,42 +596,42 @@ class EquityResearchEngine:
         if shares <= 0:
             shares = 1.0
 
+        net_income = float(
+            target_latest.get(
+                "net_income",
+                0.0,
+            )
+            or 0.0
+        )
+
+        revenue = float(
+            target_latest.get(
+                "revenue",
+                0.0,
+            )
+            or 0.0
+        )
+
+        ebitda = float(
+            target_latest.get(
+                "ebitda",
+                0.0,
+            )
+            or 0.0
+        )
+
         target_metrics = pd.Series(
             {
                 "eps": (
-                    float(
-                        target_latest.get(
-                            "net_income",
-                            0.0,
-                        )
-                        or 0.0
-                    )
+                    net_income
                     / shares
                 ),
                 "revenue_per_share": (
-                    float(
-                        target_latest.get(
-                            "revenue",
-                            0.0,
-                        )
-                        or 0.0
-                    )
+                    revenue
                     / shares
                 ),
-                "revenue": float(
-                    target_latest.get(
-                        "revenue",
-                        0.0,
-                    )
-                    or 0.0
-                ),
-                "ebitda": float(
-                    target_latest.get(
-                        "ebitda",
-                        0.0,
-                    )
-                    or 0.0
-                ),
+                "revenue": revenue,
+                "ebitda": ebitda,
             }
         )
 
@@ -679,6 +677,11 @@ class EquityResearchEngine:
         """
         Build a simplified DCF valuation from historical FCF.
         """
+
+        if forecast_years <= 0:
+            raise ValueError(
+                "Forecast years must be positive."
+            )
 
         latest_revenue = self._latest_value(
             target_financials,
@@ -813,7 +816,9 @@ class EquityResearchEngine:
         Combine DCF and peer-based valuation outputs.
         """
 
-        dcf_values = []
+        dcf_values: list[
+            dict[str, Any]
+        ] = []
 
         for scenario_name in (
             "bear",
@@ -842,8 +847,14 @@ class EquityResearchEngine:
                         ),
                     }
                 )
+
             except ValueError:
                 continue
+
+        if target_financials.empty:
+            raise ValueError(
+                "Target financial data cannot be empty."
+            )
 
         latest = (
             target_financials.iloc[-1]
@@ -896,22 +907,37 @@ class EquityResearchEngine:
             or 0.0
         )
 
-        peer_rows = []
+        peer_rows: list[
+            dict[str, Any]
+        ] = []
 
         if not peer_valuation.empty:
+
             if "pe" in peer_valuation.columns:
+
                 peer_pe = (
-                    peer_valuation["pe"]
+                    pd.to_numeric(
+                        peer_valuation["pe"],
+                        errors="coerce",
+                    )
                     .dropna()
                 )
 
                 if not peer_pe.empty:
-                    try:
-                        value = calculate_pe_value(
-                            eps=eps,
-                            peer_pe=float(
-                                peer_pe.iloc[0]
-                            ),
+
+                    peer_pe_value = float(
+                        peer_pe.iloc[0]
+                    )
+
+                    if (
+                        peer_pe_value > 0
+                        and eps > 0
+                    ):
+                        value = (
+                            calculate_pe_value(
+                                eps=eps,
+                                peer_pe=peer_pe_value,
+                            )
                         )
 
                         peer_rows.append(
@@ -924,54 +950,66 @@ class EquityResearchEngine:
                                 ),
                             }
                         )
-                    except ValueError:
-                        pass
 
             if (
                 "ev_ebitda"
                 in peer_valuation.columns
             ):
+
                 peer_ev_ebitda = (
-                    peer_valuation[
-                        "ev_ebitda"
-                    ]
+                    pd.to_numeric(
+                        peer_valuation[
+                            "ev_ebitda"
+                        ],
+                        errors="coerce",
+                    )
                     .dropna()
                 )
 
                 if not peer_ev_ebitda.empty:
-                    try:
-                        value = (
-                            calculate_ev_ebitda_value(
-                                ebitda=ebitda,
-                                peer_ev_ebitda=float(
-                                    peer_ev_ebitda.iloc[
-                                        0
-                                    ]
-                                ),
-                                net_debt=net_debt,
-                                shares_outstanding=shares,
-                            )
-                        )
 
-                        peer_rows.append(
-                            {
-                                "method": (
-                                    "Peer EV/EBITDA"
-                                ),
-                                "implied_per_share": (
-                                    value
-                                ),
-                            }
-                        )
-                    except ValueError:
-                        pass
+                    peer_ev_ebitda_value = float(
+                        peer_ev_ebitda.iloc[0]
+                    )
+
+                    if (
+                        peer_ev_ebitda_value > 0
+                        and ebitda > 0
+                    ):
+                        try:
+                            value = (
+                                calculate_ev_ebitda_value(
+                                    ebitda=ebitda,
+                                    peer_ev_ebitda=(
+                                        peer_ev_ebitda_value
+                                    ),
+                                    net_debt=net_debt,
+                                    shares_outstanding=shares,
+                                )
+                            )
+
+                            peer_rows.append(
+                                {
+                                    "method": (
+                                        "Peer EV/EBITDA"
+                                    ),
+                                    "implied_per_share": (
+                                        value
+                                    ),
+                                }
+                            )
+
+                        except ValueError:
+                            pass
 
         valuation_rows = (
             dcf_values + peer_rows
         )
 
-        valuation_summary = pd.DataFrame(
-            valuation_rows
+        valuation_summary = (
+            pd.DataFrame(
+                valuation_rows
+            )
         )
 
         if valuation_summary.empty:
@@ -979,8 +1017,10 @@ class EquityResearchEngine:
                 "No valid valuation outputs were generated."
             )
 
-        scenario_valuations = pd.DataFrame(
-            dcf_values
+        scenario_valuations = (
+            pd.DataFrame(
+                dcf_values
+            )
         )
 
         return (
@@ -999,12 +1039,15 @@ class EquityResearchEngine:
             self.load_market_data()
         )
 
-        target_financials, peer_financials = (
-            self.load_financial_universe()
-        )
+        (
+            target_financials,
+            peer_financials,
+        ) = self.load_financial_universe()
 
-        company_info = get_company_info(
-            self.target_ticker
+        company_info = (
+            get_company_info(
+                self.target_ticker
+            )
         )
 
         wacc = self.estimate_wacc(
@@ -1031,6 +1074,12 @@ class EquityResearchEngine:
             wacc=wacc,
         )
 
+        if self.target_ticker not in market_prices.columns:
+            raise ValueError(
+                "No market price column is available "
+                f"for {self.target_ticker}."
+            )
+
         target_prices = (
             market_prices[
                 self.target_ticker
@@ -1049,9 +1098,12 @@ class EquityResearchEngine:
         )
 
         valuation_values = (
-            valuation_summary[
-                "implied_per_share"
-            ]
+            pd.to_numeric(
+                valuation_summary[
+                    "implied_per_share"
+                ],
+                errors="coerce",
+            )
             .dropna()
         )
 
@@ -1060,8 +1112,19 @@ class EquityResearchEngine:
                 "No valid valuation reference is available."
             )
 
+        positive_valuation_values = (
+            valuation_values[
+                valuation_values > 0
+            ]
+        )
+
+        if positive_valuation_values.empty:
+            raise ValueError(
+                "No positive valuation reference is available."
+            )
+
         median_value = float(
-            valuation_values.median()
+            positive_valuation_values.median()
         )
 
         valuation_upside = (
@@ -1076,8 +1139,6 @@ class EquityResearchEngine:
                 intrinsic_value=median_value,
                 market_price=market_price,
             )
-            if median_value > 0
-            else 0.0
         )
 
         latest = (
@@ -1204,33 +1265,35 @@ class EquityResearchEngine:
             "score_classification"
         ]
 
+        dashboard_input = type(
+            "ResearchDashboardInput",
+            (),
+            {
+                "target_ticker": (
+                    self.target_ticker
+                ),
+                "historical_financials": (
+                    target_financials
+                ),
+                "valuation_summary": (
+                    valuation_summary
+                ),
+                "scenario_valuations": (
+                    scenario_valuations
+                ),
+                "peer_comparison": (
+                    peer_comparison
+                ),
+                "investment_summary": (
+                    investment_summary
+                ),
+                "estimated_wacc": wacc,
+            },
+        )()
+
         research_dashboard = (
             build_research_dashboard(
-                type(
-                    "ResearchDashboardInput",
-                    (),
-                    {
-                        "target_ticker": (
-                            self.target_ticker
-                        ),
-                        "historical_financials": (
-                            target_financials
-                        ),
-                        "valuation_summary": (
-                            valuation_summary
-                        ),
-                        "scenario_valuations": (
-                            scenario_valuations
-                        ),
-                        "peer_comparison": (
-                            peer_comparison
-                        ),
-                        "investment_summary": (
-                            investment_summary
-                        ),
-                        "estimated_wacc": wacc,
-                    },
-                )()
+                dashboard_input
             )
         )
 
@@ -1254,7 +1317,9 @@ class EquityResearchEngine:
             ),
             estimated_wacc=wacc,
             market_price=market_price,
-            research_dashboard=research_dashboard,
+            research_dashboard=(
+                research_dashboard
+            ),
         )
 
 
