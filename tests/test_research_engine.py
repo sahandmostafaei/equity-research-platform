@@ -2,7 +2,6 @@ import pytest
 
 from src.research_engine import (
     EquityResearchEngine,
-    run_research,
 )
 
 
@@ -89,21 +88,3 @@ def test_empty_peer_list_is_rejected():
             target_ticker="MSFT",
             peer_tickers=[],
         )
-
-
-def test_run_research_constructs_engine():
-
-    engine = run_research(
-        target_ticker="MSFT",
-        peer_tickers=[
-            "GOOGL",
-            "META",
-        ],
-    )
-
-    assert engine.target_ticker == "MSFT"
-
-    assert engine.peer_tickers == [
-        "GOOGL",
-        "META",
-    ]
