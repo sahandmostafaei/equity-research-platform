@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pandas as pd
+
 from src.analytical_summary import (
     build_research_dashboard,
     save_research_dashboard,
@@ -30,6 +32,7 @@ from src.reporting import (
 PROJECT_ROOT = Path(__file__).resolve().parent
 OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"
 FIGURES_DIR = PROJECT_ROOT / "figures"
+UNIVERSE_PATH = PROJECT_ROOT / "data" / "research_universe.csv"
 
 
 def main() -> None:
@@ -43,7 +46,38 @@ def main() -> None:
         exist_ok=True,
     )
 
-    engine = EquityResearchEngine()
+    universe = pd.read_csv(
+        UNIVERSE_PATH
+    )
+
+    target_rows = universe.loc[
+        universe["role"].eq("Target"),
+        "ticker",
+    ]
+
+    peer_tickers = universe.loc[
+        universe["role"].eq("Peer"),
+        "ticker",
+    ].tolist()
+
+    if target_rows.empty:
+        raise ValueError(
+            "Research universe must contain one Target."
+        )
+
+    if not peer_tickers:
+        raise ValueError(
+            "Research universe must contain at least one Peer."
+        )
+
+    target_ticker = str(
+        target_rows.iloc[0]
+    )
+
+    engine = EquityResearchEngine(
+        target_ticker=target_ticker,
+        peer_tickers=peer_tickers,
+    )
 
     result = engine.run()
 
