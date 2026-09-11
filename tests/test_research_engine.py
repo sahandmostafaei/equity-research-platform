@@ -1,112 +1,109 @@
-import pandas as pd
 import pytest
 
 from src.research_engine import (
-    build_investment_assessment,
+    EquityResearchEngine,
+    run_research,
 )
 
 
-def test_build_investment_assessment():
-    valuation_summary = pd.DataFrame(
-        {
-            "method": [
-                "DCF",
-                "EV/EBITDA",
-                "P/E",
-            ],
-            "implied_per_share": [
-                120.0,
-                110.0,
-                115.0,
-            ],
-        }
+def test_engine_initializes():
+
+    engine = EquityResearchEngine(
+        target_ticker="MSFT",
+        peer_tickers=[
+            "GOOGL",
+            "META",
+            "AAPL",
+            "AMZN",
+        ],
     )
 
-    result = build_investment_assessment(
-        valuation_summary=valuation_summary,
-        roic=0.15,
-        revenue_growth=0.10,
-        fcf_margin=0.15,
-        net_debt_to_ebitda=1.0,
+    assert engine.target_ticker == "MSFT"
+
+    assert engine.peer_tickers == [
+        "GOOGL",
+        "META",
+        "AAPL",
+        "AMZN",
+    ]
+
+    assert engine.start_date == "2018-01-01"
+
+    assert engine.end_date is None
+
+
+def test_engine_normalizes_tickers():
+
+    engine = EquityResearchEngine(
+        target_ticker="msft",
+        peer_tickers=[
+            "googl",
+            "meta",
+        ],
     )
 
-    assert isinstance(result, dict)
+    assert engine.target_ticker == "MSFT"
 
-    assert "fundamental_score" in result
-    assert "valuation_upside" in result
-    assert "valuation_classification" in result
+    assert engine.peer_tickers == [
+        "GOOGL",
+        "META",
+    ]
 
-    assert 0.0 <= result["fundamental_score"] <= 1.0
+
+def test_engine_removes_target_from_peers():
+
+    engine = EquityResearchEngine(
+        target_ticker="MSFT",
+        peer_tickers=[
+            "MSFT",
+            "GOOGL",
+            "META",
+        ],
+    )
+
+    assert engine.target_ticker == "MSFT"
+
+    assert engine.peer_tickers == [
+        "GOOGL",
+        "META",
+    ]
 
 
-def test_build_investment_assessment_rejects_empty_valuation():
-    valuation_summary = pd.DataFrame()
+def test_empty_target_is_rejected():
 
     with pytest.raises(ValueError):
-        build_investment_assessment(
-            valuation_summary=valuation_summary,
-            roic=0.15,
-            revenue_growth=0.10,
-            fcf_margin=0.15,
-            net_debt_to_ebitda=1.0,
+
+        EquityResearchEngine(
+            target_ticker="",
+            peer_tickers=[
+                "GOOGL",
+            ],
         )
 
 
-def test_build_investment_assessment_with_positive_valuation():
-    valuation_summary = pd.DataFrame(
-        {
-            "method": [
-                "DCF",
-                "EV/EBITDA",
-            ],
-            "implied_per_share": [
-                150.0,
-                140.0,
-            ],
-        }
+def test_empty_peer_list_is_rejected():
+
+    with pytest.raises(ValueError):
+
+        EquityResearchEngine(
+            target_ticker="MSFT",
+            peer_tickers=[],
+        )
+
+
+def test_run_research_constructs_engine():
+
+    engine = run_research(
+        target_ticker="MSFT",
+        peer_tickers=[
+            "GOOGL",
+            "META",
+        ],
     )
 
-    result = build_investment_assessment(
-        valuation_summary=valuation_summary,
-        roic=0.20,
-        revenue_growth=0.12,
-        fcf_margin=0.18,
-        net_debt_to_ebitda=0.5,
-    )
+    assert engine.target_ticker == "MSFT"
 
-    assert result["fundamental_score"] > 0
-    assert result["valuation_upside"] is not None
-
-
-def test_build_investment_assessment_handles_multiple_methods():
-    valuation_summary = pd.DataFrame(
-        {
-            "method": [
-                "DCF",
-                "P/E",
-                "EV/EBITDA",
-                "Price/Sales",
-            ],
-            "implied_per_share": [
-                100.0,
-                110.0,
-                105.0,
-                95.0,
-            ],
-        }
-    )
-
-    result = build_investment_assessment(
-        valuation_summary=valuation_summary,
-        roic=0.12,
-        revenue_growth=0.08,
-        fcf_margin=0.12,
-        net_debt_to_ebitda=1.5,
-    )
-
-    assert isinstance(result, dict)
-    assert isinstance(
-        result["fundamental_score"],
-        float,
-    )
-    assert 0.0 <= result["fundamental_score"] <= 1.0
+    assert engine.peer_tickers == [
+        "GOOGL",
+        "META",
+    ]
